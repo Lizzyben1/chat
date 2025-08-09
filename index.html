@@ -186,4 +186,159 @@
     try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
   }
   function renderMessage(m, meUid){
-    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUi
+    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
+    const b = document.createElement('div'); b.className='bubble';
+    const name = document.createElement('div'); name.className='name'; name.textContent = m.name || 'Anon';
+    const text = document.createElement('div'); text.className='text'; text.textContent = m.text || '';
+    const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
+    b.append(name, text, ts); row.appendChild(b); messagesEl.appendChild(row);
+  }
+  function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+  // Unique username claim
+  async function claimUsernameTx(username, uid){
+    const uname = username.toLowerCase();
+    const unameRef = doc(db, 'usernames', uname);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(unameRef);
+      if (snap.exists()) throw new Error('Username is taken');
+      tx.set(unameRef, { uid, at: serverTimestamp() });
+    });
+  }
+
+  // --- Google sign-in (popup + redirect fallback) ---
+  const provider = new GoogleAuthProvider();
+  googleBtn.onclick = async () => {
+    try {
+      if (auth.currentUser) {
+        await linkWithPopup(auth.currentUser, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
+      authMsg.textContent = '';
+      updateCounter();
+    } catch (err) {
+      // Popup blocked? Use redirect flow.
+      try {
+        authMsg.textContent = (err.code || '') + ' — trying redirect…';
+        await signInWithRedirect(auth, provider);
+      } catch (err2) {
+        authMsg.textContent = err2.message || String(err2);
+      }
+    }
+  };
+
+  // Handle redirect results (prevents “need to reload” feeling)
+  getRedirectResult(auth).catch(err => {
+    if (err) authMsg.textContent = err.message || String(err);
+  });
+
+  // Sign up (email/password + unique username)
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authMsg.textContent = 'Creating account…';
+    const username = (document.getElementById('su-username').value || '').trim();
+    const email = document.getElementById('su-email').value.trim();
+    const pass  = document.getElementById('su-pass').value;
+
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const uid = cred.user.uid;
+
+      await claimUsernameTx(username, uid);
+      await updateProfile(cred.user, { displayName: username });
+      await setDoc(doc(db, 'users', uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
+
+      authMsg.textContent = 'Account created. You are signed in.';
+      updateCounter();
+    } catch (err) {
+      authMsg.textContent = err.message || String(err);
+    }
+  });
+
+  // Sign in (email/password)
+  document.getElementById('signinForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authMsg.textContent = 'Signing in…';
+    const email = document.getElementById('si-email').value.trim();
+    const pass  = document.getElementById('si-pass').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      authMsg.textContent = 'Signed in.';
+      updateCounter();
+    } catch (err) {
+      authMsg.textContent = err.message || String(err);
+    }
+  });
+
+  // Username onboarding (post-login, if missing/unclaimed)
+  unameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = (unameInput.value || '').trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
+    try {
+      await claimUsernameTx(username, auth.currentUser.uid);
+      await updateProfile(auth.currentUser, { displayName: username });
+      await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
+      unamePane.style.display = 'none';
+      authMsg.textContent = 'Username saved!';
+    } catch (err) {
+      authMsg.textContent = err.message || String(err);
+    }
+  });
+
+  // Sign out
+  signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
+
+  // Auth + realtime
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      authState.textContent = 'signed out';
+      whoami.style.display='none';
+      signoutBtn.style.display='none';
+      unamePane.style.display='none';
+      updateCounter();
+      return;
+    }
+    authState.textContent = 'signed in';
+    whoami.textContent = `@${user.displayName || 'user'} · ${user.email || ''}`;
+    whoami.style.display='inline-block';
+    signoutBtn.style.display='inline-block';
+
+    await ensureRoom();
+
+    // If no reserved username, prompt onboarding
+    let showOnboard = true;
+    if (user.displayName) {
+      const claimed = await getDoc(doc(db, 'usernames', user.displayName.toLowerCase()));
+      showOnboard = !(claimed.exists() && claimed.data().uid === user.uid);
+    }
+    unamePane.style.display = showOnboard ? 'block' : 'none';
+
+    const q = query(msgsRef, orderBy('ts','asc'), limit(200));
+    rtState.textContent = 'listening';
+    onSnapshot(q, (snap) => {
+      messagesEl.innerHTML = '';
+      snap.forEach(d => renderMessage(d.data(), user.uid));
+      scrollToBottom();
+    });
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text || text.length > MAX_LEN) return; // hard client cap (500)
+      await addDoc(msgsRef, {
+        uid: user.uid,
+        name: user.displayName || 'Anon',
+        text, ts: serverTimestamp()
+      });
+      input.value = '';
+      updateCounter();
+      scrollToBottom();
+    };
+  });
+</script>
+</body>
+</html>
