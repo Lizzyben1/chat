@@ -3,148 +3,239 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Global Chat</title>
+  <title>Global Chat (Accounts)</title>
   <style>
-    :root{
-      --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --accent:#4da3ff;
-      --border:#1e2a36; --good:#20c997; --bad:#ff6b6b
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    .wrap{max-width:900px;margin:24px auto;padding:0 16px}
-    header{display:flex;align-items:center;gap:12px;margin:18px 0}
-    header h1{font-size:22px;margin:0}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
-    #messages{height:60vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
-    .msg{display:flex;gap:10px}
-    .bubble{max-width:80%;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:#0f1620}
-    .me .bubble{background:#0b2036;border-color:#0b3b66}
-    .name{font-weight:600;margin-right:6px}
-    .ts{color:var(--muted);font-size:12px;margin-top:4px}
-    form{display:flex;gap:10px;margin-top:12px}
-    input[type="text"]{flex:1;min-height:42px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
-    button{padding:0 16px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;border-radius:12px;cursor:pointer}
-    button:hover{border-color:#28435f}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:#0f1620;font-size:12px}
+    :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:920px;margin:24px auto;padding:0 16px}
+    header{display:flex;gap:12px;align-items:center;margin:12px 0}
+    h1{margin:0;font-size:22px}
+    .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
+    #messages{height:54vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+    .msg{display:flex}.bubble{background:#0e141c;border:1px solid var(--border);border-radius:14px;padding:10px 12px;max-width:80%}
+    .me .bubble{background:#0b2036}
+    .name{font-weight:600}.ts{color:#8aa0b3;font-size:12px;margin-top:4px}
+    form{display:flex;gap:8px;margin-top:10px}
+    input,button{border-radius:10px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
+    input{padding:10px} button{padding:10px 14px;cursor:pointer}
+    .auth form{display:grid;grid-template-columns:1fr;gap:8px}
+    .tabs{display:flex;gap:8px;margin-bottom:8px}
+    .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
+    .tab.active{background:#162536}
+    .right{display:flex;gap:8px;margin-left:auto}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Global Chat</h1>
-      <span class="pill" id="auth-pill">auth: <span id="auth-state">connecting…</span></span>
-      <span class="pill" id="rt-pill">rt: <span id="rt-state">idle</span></span>
-    </header>
+<div class="wrap">
+  <header>
+    <h1>Global Chat</h1>
+    <span class="pill">auth: <span id="auth-state">loading…</span></span>
+    <span class="pill">rt: <span id="rt-state">idle</span></span>
+    <div class="right">
+      <span id="whoami" class="pill" style="display:none"></span>
+      <button id="signoutBtn" style="display:none">Sign out</button>
+    </div>
+  </header>
 
-    <div class="card">
+  <div class="row">
+    <!-- Chat card -->
+    <div class="card" style="flex:2">
       <div id="messages"></div>
-      <form id="form" autocomplete="off">
-        <input id="input" type="text" placeholder="Write a message…" maxlength="500" />
-        <button id="sendBtn" type="submit">Send</button>
+      <form id="form">
+        <input id="input" placeholder="Write a message…" maxlength="500"/>
+        <button type="submit">Send</button>
       </form>
     </div>
+
+    <!-- Auth card -->
+    <div class="card auth" style="flex:1">
+      <div class="tabs">
+        <div id="tab-signin" class="tab active">Sign in</div>
+        <div id="tab-signup" class="tab">Sign up</div>
+      </div>
+
+      <div id="signin-pane">
+        <form id="signinForm">
+          <input id="si-email" type="email" placeholder="Email" required>
+          <input id="si-pass" type="password" placeholder="Password" required>
+          <button>Sign in</button>
+        </form>
+      </div>
+
+      <div id="signup-pane" style="display:none">
+        <form id="signupForm">
+          <input id="su-username" placeholder="Username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+          <input id="su-email" type="email" placeholder="Email" required>
+          <input id="su-pass" type="password" placeholder="Password (min 6 chars)" minlength="6" required>
+          <button>Create account</button>
+        </form>
+      </div>
+
+      <div id="auth-msg" style="color:#8aa0b3;margin-top:6px;min-height:1.2em"></div>
+    </div>
   </div>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import {
-      getFirestore, doc, setDoc, getDoc, collection, addDoc,
-      serverTimestamp, query, orderBy, limit, onSnapshot
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signOut,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
+    serverTimestamp, query, orderBy, limit, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
-      authDomain: "poopy-games-chat.firebaseapp.com",
-      projectId: "poopy-games-chat",
-      storageBucket: "poopy-games-chat.firebasestorage.app",
-      messagingSenderId: "412556849195",
-      appId: "1:412556849195:web:643791cd55e173f9fbba6e",
-      measurementId: "G-ELSV57GKEP"
-    };
+  // -- Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
+    authDomain: "poopy-games-chat.firebaseapp.com",
+    projectId: "poopy-games-chat",
+    storageBucket: "poopy-games-chat.firebasestorage.app",
+    messagingSenderId: "412556849195",
+    appId: "1:412556849195:web:643791cd55e173f9fbba6e",
+    measurementId: "G-ELSV57GKEP"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
 
-    const messagesEl = document.getElementById('messages');
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const authState = document.getElementById('auth-state');
-    const rtState = document.getElementById('rt-state');
+  // DOM
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const authState = document.getElementById('auth-state');
+  const rtState   = document.getElementById('rt-state');
+  const whoami    = document.getElementById('whoami');
+  const signoutBtn= document.getElementById('signoutBtn');
+  const authMsg   = document.getElementById('auth-msg');
 
-    const ROOM_ID = 'global';
-    const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
+  // Tabs
+  const tabSignin = document.getElementById('tab-signin');
+  const tabSignup = document.getElementById('tab-signup');
+  const signinPane= document.getElementById('signin-pane');
+  const signupPane= document.getElementById('signup-pane');
+  tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; authMsg.textContent=''; };
+  tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; authMsg.textContent=''; };
 
-    async function ensureRoom(){
-      const roomRef = doc(db, 'rooms', ROOM_ID);
-      const snap = await getDoc(roomRef);
-      if (!snap.exists()) {
-        await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
-      }
-    }
+  // Room refs
+  const ROOM_ID = 'global';
+  const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
 
-    function fmtTime(ts){
-      try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
-    }
+  async function ensureRoom(){
+    const roomRef = doc(db, 'rooms', ROOM_ID);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
+  }
 
-    function renderMessage(m, meUid){
-      const li = document.createElement('div');
-      li.className = 'msg' + (m.uid === meUid ? ' me' : '');
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = (m.name || 'Anon');
-      const text = document.createElement('div');
-      text.textContent = m.text || '';
-      const ts = document.createElement('div');
-      ts.className = 'ts';
-      ts.textContent = fmtTime(m.ts);
-      bubble.appendChild(name);
-      bubble.appendChild(text);
-      bubble.appendChild(ts);
-      li.appendChild(bubble);
-      messagesEl.appendChild(li);
-    }
+  function fmtTime(ts){
+    try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
+  }
+  function renderMessage(m, meUid){
+    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
+    const b = document.createElement('div'); b.className='bubble';
+    const name = document.createElement('div'); name.className='name'; name.textContent = m.name || 'Anon';
+    const text = document.createElement('div'); text.textContent = m.text || '';
+    const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
+    b.append(name, text, ts); row.appendChild(b); messagesEl.appendChild(row);
+  }
+  function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-    function scrollToBottom(){
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        authState.textContent = 'signing in…';
-        await signInAnonymously(auth);
-        return;
-      }
-      authState.textContent = 'signed in';
-      await ensureRoom();
-
-      const q = query(msgsRef, orderBy('ts','asc'), limit(200));
-      rtState.textContent = 'listening';
-
-      onSnapshot(q, (snap) => {
-        messagesEl.innerHTML = '';
-        snap.forEach(doc => renderMessage(doc.data(), user.uid));
-        scrollToBottom();
-      });
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        await addDoc(msgsRef, {
-          uid: user.uid,
-          name: `User-${user.uid.slice(0,6)}`,
-          text,
-          ts: serverTimestamp()
-        });
-        input.value = '';
-        scrollToBottom();
-      });
+  // ---- Sign up with Email/Password + unique username
+  async function claimUsernameTx(username, uid){
+    const uname = username.toLowerCase();
+    const unameRef = doc(db, 'usernames', uname);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(unameRef);
+      if (snap.exists()) throw new Error('Username is taken');
+      tx.set(unameRef, { uid, at: serverTimestamp() });
     });
-  </script>
+  }
+
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authMsg.textContent = 'Creating account…';
+    const username = (document.getElementById('su-username').value || '').trim();
+    const email = document.getElementById('su-email').value.trim();
+    const pass  = document.getElementById('su-pass').value;
+
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const uid = cred.user.uid;
+
+      // Reserve username (unique) and save user profile
+      await claimUsernameTx(username, uid);
+      await updateProfile(cred.user, { displayName: username });
+      await setDoc(doc(db, 'users', uid), {
+        username, email, createdAt: serverTimestamp()
+      }, { merge: true });
+
+      authMsg.textContent = 'Account created. You are signed in.';
+    } catch (err) {
+      authMsg.textContent = err.message || String(err);
+    }
+  });
+
+  // ---- Sign in
+  document.getElementById('signinForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authMsg.textContent = 'Signing in…';
+    const email = document.getElementById('si-email').value.trim();
+    const pass  = document.getElementById('si-pass').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      authMsg.textContent = 'Signed in.';
+    } catch (err) {
+      authMsg.textContent = err.message || String(err);
+    }
+  });
+
+  // ---- Sign out
+  signoutBtn.onclick = () => signOut(auth);
+
+  // ---- Auth + realtime
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      authState.textContent = 'signed out';
+      whoami.style.display='none';
+      signoutBtn.style.display='none';
+      return;
+    }
+    authState.textContent = 'signed in';
+    whoami.textContent = `@${user.displayName || 'user'} · ${user.email || ''}`;
+    whoami.style.display='inline-block';
+    signoutBtn.style.display='inline-block';
+
+    await ensureRoom();
+
+    const q = query(msgsRef, orderBy('ts','asc'), limit(200));
+    rtState.textContent = 'listening';
+    onSnapshot(q, (snap) => {
+      messagesEl.innerHTML = '';
+      snap.forEach(d => renderMessage(d.data(), user.uid));
+      scrollToBottom();
+    });
+
+    // Send message
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      await addDoc(msgsRef, {
+        uid: user.uid,
+        name: user.displayName || 'Anon',
+        text, ts: serverTimestamp()
+      });
+      input.value = '';
+      scrollToBottom();
+    };
+  });
+</script>
 </body>
 </html>
