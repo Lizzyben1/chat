@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Global Chat</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --accent:#4da3ff;
+      --border:#1e2a36; --good:#20c997; --bad:#ff6b6b
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    .wrap{max-width:900px;margin:24px auto;padding:0 16px}
+    header{display:flex;align-items:center;gap:12px;margin:18px 0}
+    header h1{font-size:22px;margin:0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+    #messages{height:60vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+    .msg{display:flex;gap:10px}
+    .bubble{max-width:80%;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:#0f1620}
+    .me .bubble{background:#0b2036;border-color:#0b3b66}
+    .name{font-weight:600;margin-right:6px}
+    .ts{color:var(--muted);font-size:12px;margin-top:4px}
+    form{display:flex;gap:10px;margin-top:12px}
+    input[type="text"]{flex:1;min-height:42px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
+    button{padding:0 16px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;border-radius:12px;cursor:pointer}
+    button:hover{border-color:#28435f}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:#0f1620;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Global Chat</h1>
+      <span class="pill" id="auth-pill">auth: <span id="auth-state">connecting…</span></span>
+      <span class="pill" id="rt-pill">rt: <span id="rt-state">idle</span></span>
+    </header>
+
+    <div class="card">
+      <div id="messages"></div>
+      <form id="form" autocomplete="off">
+        <input id="input" type="text" placeholder="Write a message…" maxlength="500" />
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc,
+      serverTimestamp, query, orderBy, limit, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
+      authDomain: "poopy-games-chat.firebaseapp.com",
+      projectId: "poopy-games-chat",
+      storageBucket: "poopy-games-chat.firebasestorage.app",
+      messagingSenderId: "412556849195",
+      appId: "1:412556849195:web:643791cd55e173f9fbba6e",
+      measurementId: "G-ELSV57GKEP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    const messagesEl = document.getElementById('messages');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const authState = document.getElementById('auth-state');
+    const rtState = document.getElementById('rt-state');
+
+    const ROOM_ID = 'global';
+    const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
+
+    async function ensureRoom(){
+      const roomRef = doc(db, 'rooms', ROOM_ID);
+      const snap = await getDoc(roomRef);
+      if (!snap.exists()) {
+        await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
+      }
+    }
+
+    function fmtTime(ts){
+      try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
+    }
+
+    function renderMessage(m, meUid){
+      const li = document.createElement('div');
+      li.className = 'msg' + (m.uid === meUid ? ' me' : '');
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = (m.name || 'Anon');
+      const text = document.createElement('div');
+      text.textContent = m.text || '';
+      const ts = document.createElement('div');
+      ts.className = 'ts';
+      ts.textContent = fmtTime(m.ts);
+      bubble.appendChild(name);
+      bubble.appendChild(text);
+      bubble.appendChild(ts);
+      li.appendChild(bubble);
+      messagesEl.appendChild(li);
+    }
+
+    function scrollToBottom(){
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        authState.textContent = 'signing in…';
+        await signInAnonymously(auth);
+        return;
+      }
+      authState.textContent = 'signed in';
+      await ensureRoom();
+
+      const q = query(msgsRef, orderBy('ts','asc'), limit(200));
+      rtState.textContent = 'listening';
+
+      onSnapshot(q, (snap) => {
+        messagesEl.innerHTML = '';
+        snap.forEach(doc => renderMessage(doc.data(), user.uid));
+        scrollToBottom();
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        await addDoc(msgsRef, {
+          uid: user.uid,
+          name: `User-${user.uid.slice(0,6)}`,
+          text,
+          ts: serverTimestamp()
+        });
+        input.value = '';
+        scrollToBottom();
+      });
+    });
+  </script>
+</body>
+</html>
