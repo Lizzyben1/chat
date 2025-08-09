@@ -92,6 +92,15 @@
         </form>
       </div>
 
+      <!-- Username onboarding (shown after Google if none set/claimed) -->
+      <div id="username-onboard" style="display:none;margin-top:8px">
+        <form id="unameForm">
+          <input id="uname-input" placeholder="Pick a username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+          <button>Save username</button>
+        </form>
+        <div class="tiny">This sets your chat name and reserves it.</div>
+      </div>
+
       <div id="auth-msg" style="color:#8aa0b3;margin-top:6px;min-height:1.2em"></div>
     </div>
   </div>
@@ -102,7 +111,7 @@
   import {
     getAuth, onAuthStateChanged, signOut,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
-    GoogleAuthProvider, signInWithPopup, linkWithPopup
+    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, linkWithPopup
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
@@ -135,6 +144,10 @@
   const whoami    = document.getElementById('whoami');
   const signoutBtn= document.getElementById('signoutBtn');
   const authMsg   = document.getElementById('auth-msg');
+  const googleBtn = document.getElementById('googleBtn');
+  const unamePane = document.getElementById('username-onboard');
+  const unameForm = document.getElementById('unameForm');
+  const unameInput= document.getElementById('uname-input');
 
   // Tabs
   const tabSignin = document.getElementById('tab-signin');
@@ -173,132 +186,4 @@
     try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
   }
   function renderMessage(m, meUid){
-    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
-    const b = document.createElement('div'); b.className='bubble';
-    const name = document.createElement('div'); name.className='name'; name.textContent = m.name || 'Anon';
-    const text = document.createElement('div'); text.className='text'; text.textContent = m.text || '';
-    const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
-    b.append(name, text, ts); row.appendChild(b); messagesEl.appendChild(row);
-  }
-  function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
-
-  // Unique username claim
-  async function claimUsernameTx(username, uid){
-    const uname = username.toLowerCase();
-    const unameRef = doc(db, 'usernames', uname);
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(unameRef);
-      if (snap.exists()) throw new Error('Username is taken');
-      tx.set(unameRef, { uid, at: serverTimestamp() });
-    });
-  }
-
-  // --- Google sign-in ---
-  const googleBtn = document.getElementById('googleBtn');
-  const provider = new GoogleAuthProvider();
-  googleBtn.onclick = async () => {
-    try {
-      if (auth.currentUser) {
-        // If already signed in (email/pass), link Google to the same account
-        await linkWithPopup(auth.currentUser, provider);
-      } else {
-        const cred = await signInWithPopup(auth, provider);
-        // seed/update user profile doc
-        await setDoc(doc(db, 'users', cred.user.uid), {
-          username: cred.user.displayName || null,
-          email: cred.user.email || null,
-          photoURL: cred.user.photoURL || null,
-          lastLogin: serverTimestamp()
-        }, { merge: true });
-      }
-      authMsg.textContent = '';
-      updateCounter();
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
-  };
-
-  // Sign up (email/password + unique username)
-  document.getElementById('signupForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    authMsg.textContent = 'Creating account…';
-    const username = (document.getElementById('su-username').value || '').trim();
-    const email = document.getElementById('su-email').value.trim();
-    const pass  = document.getElementById('su-pass').value;
-
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
-
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const uid = cred.user.uid;
-
-      await claimUsernameTx(username, uid);
-      await updateProfile(cred.user, { displayName: username });
-      await setDoc(doc(db, 'users', uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
-
-      authMsg.textContent = 'Account created. You are signed in.';
-      updateCounter();
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
-  });
-
-  // Sign in (email/password)
-  document.getElementById('signinForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    authMsg.textContent = 'Signing in…';
-    const email = document.getElementById('si-email').value.trim();
-    const pass  = document.getElementById('si-pass').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      authMsg.textContent = 'Signed in.';
-      updateCounter();
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
-  });
-
-  // Sign out
-  signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
-
-  // Auth + realtime
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      authState.textContent = 'signed out';
-      whoami.style.display='none';
-      signoutBtn.style.display='none';
-      updateCounter();
-      return;
-    }
-    authState.textContent = 'signed in';
-    whoami.textContent = `@${user.displayName || 'user'} · ${user.email || ''}`;
-    whoami.style.display='inline-block';
-    signoutBtn.style.display='inline-block';
-
-    await ensureRoom();
-
-    const q = query(msgsRef, orderBy('ts','asc'), limit(200));
-    rtState.textContent = 'listening';
-    onSnapshot(q, (snap) => {
-      messagesEl.innerHTML = '';
-      snap.forEach(d => renderMessage(d.data(), user.uid));
-      scrollToBottom();
-    });
-
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text || text.length > MAX_LEN) return; // hard client cap (500)
-      await addDoc(msgsRef, {
-        uid: user.uid,
-        name: user.displayName || 'Anon',
-        text, ts: serverTimestamp()
-      });
-      input.value = '';
-      updateCounter();
-      scrollToBottom();
-    };
-  });
-</script>
-</body>
-</html>
+    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUi
