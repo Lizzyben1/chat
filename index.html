@@ -8,7 +8,7 @@
   :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:980px;margin:24px auto;padding:0 16px}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 16px}
   header{display:flex;gap:12px;align-items:center;margin:12px 0}
   h1{margin:0;font-size:22px}
   .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
@@ -16,11 +16,16 @@
   .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
 
   /* Chat area */
-  #messages{height:56vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px}
+  #messages{
+    height:56vh; display:flex; flex-direction:column; gap:10px;
+    scroll-behavior:smooth; padding-right:6px;
+    overflow-y:auto; overflow-x:hidden;   /* fix bottom line */
+  }
   .msg{display:flex; position:relative}
   .bubble{
     background:#0e141c;border:1px solid var(--border);border-radius:14px;
-    padding:10px 12px;max-width:80%; word-break:break-word; overflow-wrap:anywhere;
+    padding:10px 12px;max-width:80%;
+    word-break:break-word; overflow-wrap:anywhere;
   }
   .bubble *{max-width:100%}
   .me .bubble{background:#0b2036}
@@ -28,10 +33,10 @@
   .text{white-space:pre-wrap}
   .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
   .menu-btn{
-    position:absolute; top:6px; right:-8px; background:#0f1a25; border:1px solid var(--border);
+    position:absolute; top:6px; right:6px; background:#0f1a25; border:1px solid var(--border);
     border-radius:8px; padding:2px 6px; cursor:pointer; font-size:12px;
   }
-  .menu{position:absolute; top:24px; right:-8px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:180px}
+  .menu{position:absolute; top:28px; right:6px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:190px}
   .menu button{width:100%; text-align:left; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f1a25; color:#e6eef6; cursor:pointer; margin:3px 0}
   .menu button.danger{border-color:#3b1f24; background:#2a1216; color:#ffb3b3}
 
@@ -49,16 +54,22 @@
   .tiny{font-size:12px;color:#8aa0b3}
   .right{display:flex;gap:8px;margin-left:auto}
 
-  /* Auth card */
+  /* Auth & Mod cards */
   .auth form{display:grid;grid-template-columns:1fr;gap:8px}
   .tabs{display:flex;gap:8px;margin-bottom:8px}
   .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
   .tab.active{background:#162536}
-
-  /* Collapsed (blocked) message */
   .collapsed{opacity:.75}
   .collapsed .text{display:none}
   .show-btn{margin-top:6px; font-size:12px; padding:4px 8px}
+
+  .mod-panel{display:none; margin-top:12px}
+  .mod-panel h3{margin:8px 0 6px 0; font-size:16px}
+  .mod-search{display:flex; gap:8px}
+  .mod-search input{flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0e141c; color:#e6eef6}
+  .ban-item{display:flex; gap:8px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:8px; margin-top:6px; background:#0f1620}
+  .ban-item .who{font-weight:600}
+  .ban-item .why{font-size:12px; color:#8aa0b3}
 </style>
 </head>
 <body>
@@ -127,6 +138,15 @@
       </div>
 
       <div id="auth-msg" style="color:#8aa0b3;margin-top:6px;min-height:1.2em"></div>
+
+      <!-- Mod panel -->
+      <div id="modPanel" class="mod-panel">
+        <h3>Muted/Banned users</h3>
+        <div class="mod-search">
+          <input id="modSearch" placeholder="Search by uid, email, reason, status…">
+        </div>
+        <div id="modList"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -140,7 +160,7 @@
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
-    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc
+    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   /* ====== Firebase config (yours) ====== */
@@ -175,6 +195,9 @@
   const unamePane = document.getElementById('username-onboard');
   const unameForm = document.getElementById('unameForm');
   const unameInput= document.getElementById('uname-input');
+  const modPanel  = document.getElementById('modPanel');
+  const modSearch = document.getElementById('modSearch');
+  const modList   = document.getElementById('modList');
 
   /* ====== Tabs ====== */
   const tabSignin = document.getElementById('tab-signin');
@@ -187,7 +210,8 @@
   /* ====== Room & helpers ====== */
   const ROOM_ID = 'global';
   const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
-  const bansRef = (uid) => doc(db, 'rooms', ROOM_ID, 'bans', uid);
+  const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
+  const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
 
   const MOD_EMAIL = 'fressolaben@gmail.com';
   const MAX_LEN = 500;
@@ -219,9 +243,21 @@
   });
   updateCounter();
 
-  /* ====== Time utils ====== */
+  /* ====== Time & parse ====== */
   const mins = m => m*60*1000, hours = h => h*3600*1000, days = d => d*24*3600*1000;
   function fmtTime(ts){ try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
+  function fmtDateTime(ms){ return new Date(ms).toLocaleString(); }
+  function parseDuration(input){
+    if (!input) return 0;
+    // examples: 10m, 2h, 3d
+    const m = String(input).trim().match(/^(\d+)\s*([mhd])$/i);
+    if (!m) return NaN;
+    const val = parseInt(m[1],10), unit = m[2].toLowerCase();
+    if (unit==='m') return mins(val);
+    if (unit==='h') return hours(val);
+    if (unit==='d') return days(val);
+    return NaN;
+  }
 
   /* ====== Render ====== */
   function makeMenu(msgDocId, m){
@@ -247,22 +283,37 @@
     add(isBlocked ? 'Unblock user (local)' : 'Block user (local)', async ()=>{
       if (blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid);
       setBlocked(blocked);
-      // re-render by toggling visibility
       document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>{
         el.classList.toggle('collapsed', blocked.has(m.uid));
       });
     });
 
-    // Mod actions
+    // Mod actions with prompts
     if (isMod && m.uid){
-      add('Mute 10 min', ()=> setMute(m.uid, mins(10)), true);
-      add('Mute 1 hour', ()=> setMute(m.uid, hours(1)), true);
-      add('Mute 24 hours', ()=> setMute(m.uid, hours(24)), true);
-      add('Ban 1 day', ()=> setBan(m.uid, days(1)), true);
-      add('Ban 7 days', ()=> setBan(m.uid, days(7)), true);
-      add('Perma ban', ()=> setPerma(m.uid), true);
-      add('Unmute', ()=> setMute(m.uid, 0));
-      add('Unban', ()=> setBan(m.uid, 0));
+      add('Mute…', async ()=>{
+        const dur = prompt('Mute duration? (e.g., 10m, 1h, 1d)');
+        const ms = parseDuration(dur);
+        if (isNaN(ms) || ms<=0) { alert('Enter like 10m, 1h, 1d'); return; }
+        const reason = prompt('Reason for mute? (shown to user)') || '';
+        await setMute(m.uid, ms, reason);
+      }, true);
+
+      add('Ban…', async ()=>{
+        const dur = prompt('Ban duration? (e.g., 1h, 1d, 7d)');
+        const ms = parseDuration(dur);
+        if (isNaN(ms) || ms<=0) { alert('Enter like 1h, 1d, 7d'); return; }
+        const reason = prompt('Reason for ban? (shown to user)') || '';
+        await setBan(m.uid, ms, reason);
+      }, true);
+
+      add('Perma-ban', async ()=>{
+        const reason = prompt('Reason for permanent ban? (shown to user)') || '';
+        if (!confirm('Are you sure you want to PERMANENTLY ban this user?')) return;
+        await setPerma(m.uid, reason);
+      }, true);
+
+      add('Unmute', ()=> setMute(m.uid, 0, ''));
+      add('Unban', ()=> setBan(m.uid, 0, ''));
     }
     return wrap;
   }
@@ -287,7 +338,6 @@
     row.appendChild(menu);
     if (blocked.has(m.uid)) row.classList.add('collapsed');
 
-    // Collapsed reveal button
     if (blocked.has(m.uid)){
       const show = document.createElement('button');
       show.className='show-btn';
@@ -370,13 +420,14 @@
     const perma = !!b.perma;
     const muteUntil = b.muteUntil?.toMillis?.() ?? 0;
     const banUntil  = b.banUntil?.toMillis?.() ?? 0;
+    const reason = b.reason || '';
 
     if (perma || banUntil > now){
       sendingDisabledByBan = true;
-      banNotice.textContent = perma ? 'You are permanently banned from sending.' : `Banned until ${new Date(banUntil).toLocaleString()}`;
+      banNotice.textContent = (perma ? 'Permanently banned' : `Banned until ${fmtDateTime(banUntil)}`) + (reason ? ` — Reason: ${reason}` : '');
     } else if (muteUntil > now){
       sendingDisabledByBan = true;
-      banNotice.textContent = `Muted until ${new Date(muteUntil).toLocaleString()}`;
+      banNotice.textContent = `Muted until ${fmtDateTime(muteUntil)}` + (reason ? ` — Reason: ${reason}` : '');
     }
   }
 
@@ -396,21 +447,54 @@
   }
   function noteSent(){ const now = Date.now(); sendTimes.push(now); lastSentAt = now; updateCounter(); }
 
-  // Mod actions: mute/ban
-  async function setMute(uid, durationMs){
+  // Mod actions: mute/ban (with reason)
+  async function setMute(uid, durationMs, reason){
     const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
-    await setDoc(bansRef(uid), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
+    await setDoc(banDoc(uid), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
   }
-  async function setBan(uid, durationMs){
+  async function setBan(uid, durationMs, reason){
     const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
-    await setDoc(bansRef(uid), { banUntil: until, perma:false, by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
+    await setDoc(banDoc(uid), { banUntil: until, perma:false, by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
   }
-  async function setPerma(uid){
-    await setDoc(bansRef(uid), { perma:true, banUntil: new Date(86400000), by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
+  async function setPerma(uid, reason){
+    await setDoc(banDoc(uid), { perma:true, banUntil: new Date(86400000), by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
   }
 
   // Sign out
   signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
+
+  // Render the mod panel list (muted/banned users)
+  function renderModList(allDocs){
+    const q = (modSearch.value || '').toLowerCase();
+    modList.innerHTML = '';
+    allDocs.forEach(d=>{
+      const b = d.data(); const uid = d.id;
+      const statusParts = [];
+      const now = Date.now();
+      if (b.perma) statusParts.push('PERMA BAN');
+      if ((b.banUntil?.toMillis?.() ?? 0) > now) statusParts.push('BANNED');
+      if ((b.muteUntil?.toMillis?.() ?? 0) > now) statusParts.push('MUTED');
+      if (statusParts.length===0) return; // skip cleared entries
+
+      const reason = b.reason || '';
+      const untilTxt = [];
+      if (b.perma) untilTxt.push('permanent');
+      if (b.banUntil) untilTxt.push('ban until ' + fmtDateTime(b.banUntil.toMillis ? b.banUntil.toMillis() : b.banUntil));
+      if (b.muteUntil) untilTxt.push('mute until ' + fmtDateTime(b.muteUntil.toMillis ? b.muteUntil.toMillis() : b.muteUntil));
+      const line = `${uid} · ${statusParts.join(', ')} · ${untilTxt.join(', ')}`.toLowerCase();
+      if (q && !line.includes(q) && !(reason.toLowerCase().includes(q))) return;
+
+      const item = document.createElement('div'); item.className='ban-item';
+      const who = document.createElement('div'); who.className='who'; who.textContent = uid;
+      const why = document.createElement('div'); why.className='why'; why.textContent = `${statusParts.join(', ')}${reason? ' — ' + reason : ''}`;
+      const actions = document.createElement('div');
+      const unmute = document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=> setMute(uid, 0, '');
+      const unban  = document.createElement('button'); unban.textContent='Unban'; unban.onclick=()=> setBan(uid, 0, '');
+      actions.append(unmute, unban);
+      item.append(who, why, actions);
+      modList.appendChild(item);
+    });
+  }
 
   // Auth + realtime
   onAuthStateChanged(auth, async (user) => {
@@ -419,6 +503,7 @@
       whoami.style.display='none';
       signoutBtn.style.display='none';
       unamePane.style.display='none';
+      modPanel.style.display='none';
       updateCounter();
       return;
     }
@@ -429,7 +514,7 @@
 
     await ensureRoom();
 
-    // Username onboarding if not claimed
+    // If no reserved username, prompt onboarding
     let showOnboard = true;
     if (user.displayName) {
       const claimed = await getDoc(doc(db, 'usernames', user.displayName.toLowerCase()));
@@ -438,11 +523,27 @@
     unamePane.style.display = showOnboard ? 'block' : 'none';
 
     // Watch your own ban/mute doc for UI state
-    onSnapshot(bansRef(user.uid), (snap)=> showBanState(snap.data()||null));
+    onSnapshot(banDoc(user.uid), (snap)=> showBanState(snap.data()||null));
 
-    const q = query(msgsRef, orderBy('ts','asc'), limit(200));
+    // If mod, show mod panel and live list
+    const isMod = (user.email === MOD_EMAIL);
+    modPanel.style.display = isMod ? 'block' : 'none';
+    if (isMod) {
+      onSnapshot(bansColl, (snap)=>{
+        const docs = [];
+        snap.forEach(d=>docs.push(d));
+        renderModList(docs);
+      });
+      modSearch.addEventListener('input', async ()=>{
+        const snap = await getDocs(bansColl);
+        const docs=[]; snap.forEach(d=>docs.push(d));
+        renderModList(docs);
+      });
+    }
+
+    const qy = query(msgsRef, orderBy('ts','asc'), limit(200));
     rtState.textContent = 'listening';
-    onSnapshot(q, (snap) => {
+    onSnapshot(qy, (snap) => {
       messagesEl.innerHTML = '';
       snap.forEach(d => renderMessage(d, user.uid));
       scrollToBottom();
@@ -465,6 +566,9 @@
       scrollToBottom();
     };
   });
+
+  /* ====== Keep counter fresh ====== */
+  setInterval(updateCounter, 300);
 </script>
 </body>
 </html>
