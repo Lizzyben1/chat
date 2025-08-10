@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Global Chat (Mods + Crown + Clean UI)</title>
+<title>Global Chat (Grouping + AutoMod + Flags)</title>
 <style>
   :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; --gold:#f5c542; }
   *{box-sizing:border-box}
@@ -30,6 +30,11 @@
   .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer;margin:4px 0}
   .menu button.danger{border-color:#3b1f24;background:#2a1216;color:#ffb3b3}
 
+  /* Grouping */
+  .grouped .name{display:none}               /* hide repeated username */
+  .grouped .bubble{margin-top:-4px}          /* tighter stack */
+  .group-start .bubble{margin-top:0}
+
   /* Input row */
   .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
   .input-wrap{flex:1;display:flex}
@@ -53,11 +58,12 @@
   .mod-panel h3{margin:8px 0 6px 0;font-size:16px}
   .mod-search{display:flex;gap:8px}
   .mod-search input{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
-  .ban-item{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;background:#0f1620}
-  .ban-item .meta{flex:1;min-width:0}
-  .ban-item .who{font-weight:600;overflow:hidden;text-overflow:ellipsis}
-  .ban-item .why{font-size:12px;color:#8aa0b3;overflow:hidden;text-overflow:ellipsis}
-  .ban-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .section{margin-top:14px;padding-top:8px;border-top:1px dashed var(--border)}
+  .ban-item,.flag-item{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;background:#0f1620}
+  .ban-item .meta,.flag-item .meta{flex:1;min-width:0}
+  .who{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+  .why{font-size:12px;color:#8aa0b3;overflow:hidden;text-overflow:ellipsis}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -129,9 +135,17 @@
 
       <!-- Mod panel -->
       <div id="modPanel" class="mod-panel">
-        <h3>Muted/Banned users</h3>
-        <div class="mod-search"><input id="modSearch" placeholder="Search by uid, reason, status…"></div>
-        <div id="modList"></div>
+        <div class="mod-search"><input id="modSearch" placeholder="Search…"></div>
+
+        <div class="section">
+          <h3>Muted/Banned users</h3>
+          <div id="modList"></div>
+        </div>
+
+        <div class="section">
+          <h3>Flagged messages</h3>
+          <div id="flagList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -146,7 +160,7 @@
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
-    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
+    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs, where
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   // ---------- Firebase config ----------
@@ -185,6 +199,7 @@
   const modPanel  = document.getElementById('modPanel');
   const modSearch = document.getElementById('modSearch');
   const modList   = document.getElementById('modList');
+  const flagList  = document.getElementById('flagList');
   const tabSignin = document.getElementById('tab-signin');
   const tabSignup = document.getElementById('tab-signup');
   const signinPane= document.getElementById('signin-pane');
@@ -195,19 +210,35 @@
 
   // ---------- Room / collections ----------
   const ROOM_ID = 'global';
-  const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
-  const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
-  const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
-  const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
-  const modDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'mods', uid);
   const OWNER_EMAIL = 'fressolaben@gmail.com';
   const MAX_LEN = 500;
+  const GROUP_WINDOW_MS = 5 * 60 * 1000;
+
+  const msgsRef   = collection(db, 'rooms', ROOM_ID, 'messages');
+  const bansColl  = collection(db, 'rooms', ROOM_ID, 'bans');
+  const modsColl  = collection(db, 'rooms', ROOM_ID, 'mods');
+  const flagsColl = collection(db, 'rooms', ROOM_ID, 'flags');
+  const devicesColl = collection(db, 'rooms', ROOM_ID, 'devices');
+  const autoModColl = collection(db, 'rooms', ROOM_ID, 'automod');
+
+  const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
+  const modDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'mods', uid);
+  const deviceDoc = (deviceId)=> doc(db, 'rooms', ROOM_ID, 'devices', deviceId);
+  const autoDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'automod', uid);
 
   async function ensureRoom(){
     const roomRef = doc(db, 'rooms', ROOM_ID);
     const snap = await getDoc(roomRef);
     if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
+
+  // ---------- Device ID (carry bans across new accounts) ----------
+  function getDeviceId(){
+    let id = localStorage.getItem('device_id');
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem('device_id', id); }
+    return id;
+  }
+  const deviceId = getDeviceId();
 
   // ---------- Local blocks ----------
   const storageKey = 'blocked_uids';
@@ -233,8 +264,18 @@
 
   // ---------- Mods set / crowns ----------
   let modUIDs = new Set();
-  function watchMods(){
-    onSnapshot(modsColl, (snap)=>{ const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s; paintHeaderCrown(); });
+  function watchModsFor(uid,email){
+    onSnapshot(modsColl, (snap)=>{
+      const before = modUIDs;
+      const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s;
+      paintHeaderCrown();
+      // If my mod status changed, reload my page to refresh UI/permissions
+      const was = before.has(uid) || email===OWNER_EMAIL;
+      const now = s.has(uid)     || email===OWNER_EMAIL;
+      if (was !== now) location.reload();
+    });
+    // Also watch my specific mod doc directly (covers add/remove edges)
+    onSnapshot(modDoc(uid), ()=>{}); // listener exists; global watcher handles reload
   }
   const isMod = (uid,email)=> modUIDs.has(uid) || email===OWNER_EMAIL;
   function paintHeaderCrown(){
@@ -243,11 +284,16 @@
     whoami.innerHTML = `@${auth.currentUser.displayName || 'user'} · ${auth.currentUser.email || ''}${crown}`;
   }
 
-  // ---------- Render messages ----------
+  // ---------- Grouping state ----------
+  let lastUid = null;
+  let lastTsMs = 0;
+
+  // ---------- Render messages (with grouping) ----------
   function makeMenu(msgId, m){
     const wrap=document.createElement('div'); wrap.className='menu';
     const me = auth.currentUser?.uid===m.uid;
     const amMod = isMod(auth.currentUser?.uid, auth.currentUser?.email);
+
     const add=(label,fn,danger=false)=>{const b=document.createElement('button'); b.textContent=label; if(danger)b.classList.add('danger'); b.onclick=async(e)=>{e.stopPropagation();wrap.style.display='none';await fn();}; wrap.appendChild(b);};
 
     if(me||amMod) add('Delete message', ()=>deleteDoc(doc(db,'rooms',ROOM_ID,'messages',msgId)), true);
@@ -256,39 +302,57 @@
     add(isBlk?'Unblock user (local)':'Block user (local)', ()=>{ if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid); setBlocked(blocked); document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed',blocked.has(m.uid))); });
 
     if(amMod && m.uid){
-      add('Mute…', async ()=>{ const dur=prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 10m, 1h, 1d');return;} const reason=prompt('Reason (shown to user)')||''; await setMute(m.uid,ms,reason); }, true);
-      add('Ban…',  async ()=>{ const dur=prompt('Ban duration? (e.g., 1h, 1d, 7d)');  const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 1h, 1d, 7d');return;} const reason=prompt('Reason (shown to user)')||''; await setBan(m.uid,ms,reason); }, true);
-      add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason); }, true);
-      add('Unmute', ()=>setMute(m.uid,0,''));
-      add('Unban',  ()=>setBan(m.uid,0,''));
-      if(modUIDs.has(m.uid)) add('Remove moderator', ()=>deleteDoc(modDoc(m.uid)));
-      else add('Grant moderator', ()=>setDoc(modDoc(m.uid),{isMod:true,by:auth.currentUser.email,at:serverTimestamp()}));
+      add('Mute…', async ()=>{ const dur=prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 10m, 1h, 1d');return;} const reason=prompt('Reason (shown to user)')||''; await setMute(m.uid,ms,reason,true); }, true);
+      add('Ban…',  async ()=>{ const dur=prompt('Ban duration? (e.g., 1h, 1d, 7d)');  const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 1h, 1d, 7d');return;} const reason=prompt('Reason (shown to user)')||''; await setBan(m.uid,ms,reason,true); }, true);
+      add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason,true); }, true);
+      add('Unmute', ()=>setMute(m.uid,0,'',true));
+      add('Unban',  ()=>setBan(m.uid,0,'',true));
+      // Grant/remove mod (owner cannot be removed)
+      if (m.email === OWNER_EMAIL) {
+        // show but disabled
+        add('Owner (cannot be changed)', ()=>{}, false);
+      } else if(modUIDs.has(m.uid)) {
+        add('Remove moderator', ()=>deleteDoc(modDoc(m.uid)));
+      } else {
+        add('Grant moderator', ()=>setDoc(modDoc(m.uid),{isMod:true,by:auth.currentUser.email,at:serverTimestamp()}));
+      }
     }
     return wrap;
   }
 
   function renderMessage(docSnap, meUid){
-    const m=docSnap.data();
-    const row=document.createElement('div'); row.className='msg'+(m.uid===meUid?' me':''); row.dataset.uid=m.uid||'';
+    const d = docSnap.data();
+    const tsMs = d.ts?.toMillis?.() ?? Date.now();
+
+    const row=document.createElement('div'); row.className='msg'; row.dataset.uid=d.uid||'';
     const b=document.createElement('div'); b.className='bubble';
+
     const name=document.createElement('div'); name.className='name';
-    const label=document.createElement('span'); label.textContent=m.name||'Anon'; name.appendChild(label);
-    if(m.uid && modUIDs.has(m.uid)){const cr=document.createElement('span'); cr.className='crown'; cr.textContent='👑'; name.appendChild(cr);}
-    const text=document.createElement('div'); text.className='text'; text.textContent=m.text||'';
-    const ts=document.createElement('div'); ts.className='ts'; ts.textContent=fmtTime(m.ts);
+    const label=document.createElement('span'); label.textContent=d.name||'Anon'; name.appendChild(label);
+    if(d.uid && modUIDs.has(d.uid)){const cr=document.createElement('span'); cr.className='crown'; cr.textContent='👑'; name.appendChild(cr);}
+    const text=document.createElement('div'); text.className='text'; text.textContent=d.text||'';
+    const ts=document.createElement('div'); ts.className='ts'; ts.textContent=fmtTime(d.ts);
+
+    // Grouping: hide name if same user within 5 min and previous was not too far
+    const isGrouped = (lastUid === d.uid) && (tsMs - lastTsMs <= GROUP_WINDOW_MS);
+    row.classList.toggle('grouped', isGrouped);
+    row.classList.toggle('group-start', !isGrouped);
 
     const menuBtn=document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
-    const menu=makeMenu(docSnap.id,m);
+    const menu=makeMenu(docSnap.id, d);
     menuBtn.onclick=(e)=>{e.stopPropagation(); menu.style.display=(menu.style.display==='block'?'none':'block');};
     document.addEventListener('click',()=>menu.style.display='none');
 
     b.append(name,text,ts); row.append(b,menuBtn,menu);
-    if(blocked.has(m.uid)) row.classList.add('collapsed');
-    if(blocked.has(m.uid)){const show=document.createElement('button'); show.className='show-btn'; show.textContent='Show message'; show.onclick=(e)=>{e.stopPropagation(); row.classList.remove('collapsed'); show.remove();}; b.appendChild(show);}
+    if(blocked.has(d.uid)) row.classList.add('collapsed');
+    if(blocked.has(d.uid)){const show=document.createElement('button'); show.className='show-btn'; show.textContent='Show message'; show.onclick=(e)=>{e.stopPropagation(); row.classList.remove('collapsed'); show.remove();}; b.appendChild(show);}
+
+    // Update “last” trackers
+    lastUid = d.uid; lastTsMs = tsMs;
+
     messagesEl.appendChild(row);
   }
 
-  const fmtTimeStamp = t=> new Date(t).toLocaleString();
   function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
 
   // ---------- Username registry ----------
@@ -297,7 +361,7 @@
     await runTransaction(db,async(tx)=>{ const s=await tx.get(unameRef); if(s.exists()) throw new Error('Username is taken'); tx.set(unameRef,{uid,at:serverTimestamp()}); });
   }
 
-  // ---------- Google sign-in (single definition) ----------
+  // ---------- Google sign-in ----------
   const provider = new GoogleAuthProvider();
   googleBtn.onclick = async ()=>{
     try{ if(auth.currentUser) await linkWithPopup(auth.currentUser,provider); else await signInWithPopup(auth,provider); if(authMsg) authMsg.textContent=''; updateCounter(); }
@@ -312,7 +376,7 @@
     const email=document.getElementById('su-email').value.trim();
     const pass=document.getElementById('su-pass').value;
     if(!/^[a-z0-9_]{3,20}$/i.test(username)){authMsg.textContent='Use 3–20 chars: a–z, 0–9, _';return;}
-    try{ const cred=await createUserWithEmailAndPassword(auth,email,pass); await claimUsernameTx(username,cred.user.uid); await updateProfile(cred.user,{displayName:username}); await setDoc(doc(db,'users',cred.user.uid),{username,email,createdAt:serverTimestamp()},{merge:true}); authMsg.textContent='Account created. You are signed in.'; updateCounter(); }
+    try{ const cred=await createUserWithEmailAndPassword(auth,email,pass); await claimUsernameTx(username,cred.user.uid); await updateProfile(cred.user,{displayName:username}); await setDoc(doc(db,'users',cred.user.uid),{username,email,deviceId,createdAt:serverTimestamp()},{merge:true}); authMsg.textContent='Account created. You are signed in.'; updateCounter(); }
     catch(err){ authMsg.textContent = err.message || String(err); }
   });
   document.getElementById('signinForm').addEventListener('submit', async (e)=>{
@@ -342,10 +406,76 @@
   }
   const noteSent=()=>{ const n=Date.now(); sendTimes.push(n); lastSentAt=n; updateCounter(); };
 
-  // ---------- Mod writes ----------
-  async function setMute(uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
-  async function setBan (uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
-  async function setPerma(uid,reason){ await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  // ---------- Mod writes + device carry ----------
+  async function setMute(uid,ms,reason,alsoDevice){
+    const until=ms>0?new Date(Date.now()+ms):new Date(0);
+    await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true});
+    if (alsoDevice) {
+      const u = await getDoc(doc(db,'users',uid));
+      const did = u.exists()? (u.data().deviceId||null) : null;
+      if (did) await setDoc(deviceDoc(did), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp(), reason: reason||'' }, { merge:true });
+    }
+  }
+  async function setBan(uid,ms,reason,alsoDevice){
+    const until=ms>0?new Date(Date.now()+ms):new Date(0);
+    await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true});
+    if (alsoDevice) {
+      const u = await getDoc(doc(db,'users',uid));
+      const did = u.exists()? (u.data().deviceId||null) : null;
+      if (did) await setDoc(deviceDoc(did), { banUntil: until, by: auth.currentUser.email, at: serverTimestamp(), reason: reason||'' }, { merge:true });
+    }
+  }
+  async function setPerma(uid,reason,alsoDevice){
+    await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true});
+    if (alsoDevice) {
+      const u = await getDoc(doc(db,'users',uid));
+      const did = u.exists()? (u.data().deviceId||null) : null;
+      if (did) await setDoc(deviceDoc(did), { perma: true, by: auth.currentUser.email, at: serverTimestamp(), reason: reason||'' }, { merge:true });
+    }
+  }
+
+  // ---------- AutoMod (client-side) ----------
+  // 1) normalize text (lowercase, remove accents, common leet, collapse repeats, keep letters/numbers/space)
+  function normalize(s){
+    return s
+      .toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[1l!]/g,'i').replace(/[3]/g,'e').replace(/[4]/g,'a').replace(/[5$]/g,'s').replace(/[7]/g,'t')
+      .replace(/[^a-z0-9 ]+/g,' ')
+      .replace(/(\w)\1{2,}/g,'$1$1') // shrink loooong
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  // 2) slur list (add to this as needed; normalized compare)
+  const SLURS = [
+    // examples only; extend your list:
+    'nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'
+  ];
+  const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
+
+  async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
+    // write flag
+    await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
+
+    // escalate strikes (reset if >24h)
+    const ref = autoDoc(uid);
+    const snap = await getDoc(ref);
+    const now = Date.now();
+    let strikes = 0, last = 0;
+    if (snap.exists()) { strikes = snap.data().strikes||0; last = snap.data().lastAt?.toMillis?.() ?? 0; }
+    if (now - last > 24*3600*1000) strikes = 0; // reset after 24h
+    strikes += 1;
+
+    const ladder = [mins(1), mins(5), mins(10), mins(20), hours(1), hours(6), days(7), days(21), days(42)];
+    const muteMs = ladder[Math.min(strikes-1, ladder.length-1)];
+    await setDoc(ref, { strikes, lastAt: serverTimestamp() }, { merge:true });
+    await setMute(uid, muteMs, `AutoMod slur (strike ${strikes})`, true);
+  }
+
+  function containsSlur(s){
+    const n = normalize(s);
+    return SLUR_RE.test(n);
+  }
 
   // ---------- Sign out ----------
   signoutBtn.onclick = async ()=>{ await signOut(auth); updateCounter(); };
@@ -366,12 +496,39 @@
       const why=document.createElement('div'); why.className='why'; why.textContent=`${status.join(', ')}${reason?' — '+reason:''}`;
       meta.append(who,why);
 
-      const actions=document.createElement('div'); actions.className='ban-actions';
-      const unmute=document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=>setMute(uid,0,'');
-      const unban =document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=>setBan(uid,0,'');
+      const actions=document.createElement('div'); actions.className='actions';
+      const unmute=document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=>setMute(uid,0,'',true);
+      const unban =document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=>setBan(uid,0,'',true);
       actions.append(unmute,unban);
 
       item.append(meta,actions); modList.appendChild(item);
+    });
+  }
+
+  // ---------- Flag queue render ----------
+  function renderFlagList(docs){
+    flagList.innerHTML='';
+    const q=(modSearch.value||'').toLowerCase();
+    docs.forEach(d=>{
+      const f=d.data();
+      const hay=[d.id, f.uid||'', f.name||'', f.email||'', f.text||'', f.reason||''].join(' ').toLowerCase();
+      if(q && !hay.includes(q)) return;
+
+      const item=document.createElement('div'); item.className='flag-item';
+      const meta=document.createElement('div'); meta.className='meta';
+      const who=document.createElement('div'); who.className='who'; who.textContent = `${f.name||'user'} (${f.uid||'?'})`;
+      const why=document.createElement('div'); why.className='why'; why.textContent = `${f.reason||''} — ${f.text||''}`;
+      meta.append(who,why);
+
+      const actions=document.createElement('div'); actions.className='actions';
+      const delMsg=document.createElement('button'); delMsg.textContent='Delete message'; delMsg.onclick=()=>{ if(!f.msgId) return; deleteDoc(doc(db,'rooms',ROOM_ID,'messages',f.msgId)); };
+      const mute5 =document.createElement('button'); mute5.textContent='Mute 5m'; mute5.onclick =()=> setMute(f.uid, mins(5), 'Flag action', true);
+      const ban1d=document.createElement('button'); ban1d.textContent='Ban 1d'; ban1d.onclick =()=> setBan(f.uid, days(1), 'Flag action', true);
+      const clear =document.createElement('button'); clear.textContent='Clear';  clear.onclick=()=> deleteDoc(doc(db,'rooms',ROOM_ID,'flags',d.id));
+      if (f.msgId) actions.append(delMsg);
+      actions.append(mute5, ban1d, clear);
+
+      item.append(meta,actions); flagList.appendChild(item);
     });
   }
 
@@ -388,7 +545,19 @@
     authArea.style.display='none';
 
     await ensureRoom();
-    watchMods();            // start crowns
+
+    // attach device to user profile (for device bans)
+    await setDoc(doc(db,'users',user.uid), { email:user.email||'', username:user.displayName||'', deviceId, lastSeen:serverTimestamp() }, { merge:true });
+
+    // If device banned/muted, mirror to user ban doc
+    const devSnap = await getDoc(deviceDoc(deviceId));
+    if (devSnap.exists()) {
+      const d=devSnap.data();
+      await setDoc(banDoc(user.uid), d, { merge:true });
+    }
+
+    // start mods stream & crowns; auto-reload if my mod status flips
+    watchModsFor(user.uid, user.email);
     paintHeaderCrown();
 
     // Username onboarding if not reserved
@@ -399,31 +568,62 @@
     }
     unamePane.style.display=showOnboard?'block':'none';
 
-    // If mod/owner, show panel
+    // my ban/mute banner
+    onSnapshot(banDoc(user.uid),(snap)=>showBanState(snap.data()||null));
+
+    // If mod, show mod panel (bans + flags)
     const iAmMod = isMod(user.uid, user.email);
     modPanel.style.display = iAmMod ? 'block' : 'none';
     if(iAmMod){
       onSnapshot(bansColl,(snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
-      modSearch.addEventListener('input', async ()=>{ const snap=await getDocs(bansColl); const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
+      onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), (snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderFlagList(docs); });
+      modSearch.addEventListener('input', async ()=>{
+        const [bSnap, fSnap] = await Promise.all([getDocs(bansColl), getDocs(flagsColl)]);
+        const bDocs=[], fDocs=[]; bSnap.forEach(d=>bDocs.push(d)); fSnap.forEach(d=>fDocs.push(d));
+        renderModList(bDocs); renderFlagList(fDocs);
+      });
     }
 
-    onSnapshot(banDoc(user.uid),(snap)=>showBanState(snap.data()||null));
-
-    const qy=query(msgsRef, orderBy('ts','asc'), limit(200));
+    // realtime messages with grouping and mod-side auto-delete if slur slipped through
+    const qy=query(msgsRef, orderBy('ts','asc'), limit(500));
     rtState.textContent='listening';
-    onSnapshot(qy,(snap)=>{ messagesEl.innerHTML=''; snap.forEach(d=>renderMessage(d,user.uid)); scrollToBottom(); });
+    onSnapshot(qy,(snap)=>{
+      messagesEl.innerHTML=''; lastUid=null; lastTsMs=0;
+      snap.forEach(d=>{
+        const data=d.data();
+        if (containsSlur(data.text||'') || containsSlur(data.name||'')) {
+          // If I'm a mod, delete. Otherwise just show grouped list without showing slur (safety).
+          if (isMod(user.uid, user.email)) deleteDoc(doc(db,'rooms',ROOM_ID,'messages',d.id));
+          // Always flag for review (once)
+          addDoc(flagsColl, { uid: data.uid, name: data.name||'', email:'', text: data.text||'', reason:'slur (autoscan)', msgId:d.id, deviceId:'', at: serverTimestamp() }).catch(()=>{});
+          return; // don't render
+        }
+        renderMessage(d, user.uid);
+      });
+      scrollToBottom();
+    });
 
+    // send handler with client-side automod (block + flag + escalate)
     form.onsubmit = async (e)=>{
       e.preventDefault();
       const text=input.value.trim();
       if(!text || text.length>MAX_LEN) return;
       if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
-      await addDoc(msgsRef,{ uid:user.uid, name:user.displayName||'Anon', text, ts:serverTimestamp() });
+
+      const myName = user.displayName || 'Anon';
+      if (containsSlur(text) || containsSlur(myName)) {
+        // Block send, flag, escalate mute
+        await flagAndEscalate(user.uid, myName, user.email, text, 'slur (blocked before send)', null);
+        input.value=''; updateCounter();
+        return;
+      }
+
+      await addDoc(msgsRef,{ uid:user.uid, name:myName, text, ts:serverTimestamp() });
       noteSent(); input.value=''; updateCounter(); scrollToBottom();
     };
   });
 
-  // ---------- Username onboarding submit ----------
+  // ---------- Username onboarding ----------
   unameForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const username=(unameInput.value||'').trim().toLowerCase();
