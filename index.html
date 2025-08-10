@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Global Chat (Mods + Bans)</title>
+<title>Global Chat (Mods + Crown + Clean UI)</title>
 <style>
-  :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; }
+  :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; --gold:#f5c542; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1080px;margin:24px auto;padding:0 16px}
@@ -19,7 +19,7 @@
   #messages{
     height:56vh; display:flex; flex-direction:column; gap:10px;
     scroll-behavior:smooth; padding-right:6px;
-    overflow-y:auto; overflow-x:hidden;   /* fix bottom line */
+    overflow-y:auto; overflow-x:hidden;        /* no bottom line */
   }
   .msg{display:flex; position:relative}
   .bubble{
@@ -29,15 +29,16 @@
   }
   .bubble *{max-width:100%}
   .me .bubble{background:#0b2036}
-  .name{font-weight:600}
+  .name{font-weight:600; display:flex; align-items:center; gap:6px}
+  .crown{color:var(--gold); font-size:14px}
   .text{white-space:pre-wrap}
   .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
   .menu-btn{
     position:absolute; top:6px; right:6px; background:#0f1a25; border:1px solid var(--border);
     border-radius:8px; padding:2px 6px; cursor:pointer; font-size:12px;
   }
-  .menu{position:absolute; top:28px; right:6px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:190px}
-  .menu button{width:100%; text-align:left; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f1a25; color:#e6eef6; cursor:pointer; margin:3px 0}
+  .menu{position:absolute; top:28px; right:6px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:210px}
+  .menu button{width:100%; text-align:left; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f1a25; color:#e6eef6; cursor:pointer; margin:4px 0}
   .menu button.danger{border-color:#3b1f24; background:#2a1216; color:#ffb3b3}
 
   /* Input row */
@@ -67,9 +68,12 @@
   .mod-panel h3{margin:8px 0 6px 0; font-size:16px}
   .mod-search{display:flex; gap:8px}
   .mod-search input{flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0e141c; color:#e6eef6}
-  .ban-item{display:flex; gap:8px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:8px; margin-top:6px; background:#0f1620}
-  .ban-item .who{font-weight:600}
-  .ban-item .why{font-size:12px; color:#8aa0b3}
+  .ban-item{display:flex; gap:12px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:10px; margin-top:8px; background:#0f1620}
+  .ban-item .meta{flex:1; min-width:0}
+  .ban-item .who{font-weight:600; overflow:hidden; text-overflow:ellipsis}
+  .ban-item .why{font-size:12px; color:#8aa0b3; overflow:hidden; text-overflow:ellipsis}
+  .ban-actions{display:flex; gap:8px; flex-wrap:wrap}
+  .label-mod{color:var(--gold); font-weight:600; margin-left:6px}
 </style>
 </head>
 <body>
@@ -102,48 +106,51 @@
       <div class="tiny" id="banNotice" style="margin-top:6px;color:#ffb3b3"></div>
     </div>
 
-    <!-- Auth -->
+    <!-- Auth / Mods column -->
     <div class="card auth" style="flex:1">
-      <button id="googleBtn" style="width:100%;margin-bottom:10px">Continue with Google</button>
+      <!-- sign-in area (auto-hidden when logged in) -->
+      <div id="authArea">
+        <button id="googleBtn" style="width:100%;margin-bottom:10px">Continue with Google</button>
 
-      <div class="tabs">
-        <div id="tab-signin" class="tab active">Sign in</div>
-        <div id="tab-signup" class="tab">Sign up</div>
+        <div class="tabs">
+          <div id="tab-signin" class="tab active">Sign in</div>
+          <div id="tab-signup" class="tab">Sign up</div>
+        </div>
+
+        <div id="signin-pane">
+          <form id="signinForm">
+            <input id="si-email" type="email" placeholder="Email" required>
+            <input id="si-pass" type="password" placeholder="Password" required>
+            <button>Sign in</button>
+          </form>
+        </div>
+
+        <div id="signup-pane" style="display:none">
+          <form id="signupForm">
+            <input id="su-username" placeholder="Username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+            <input id="su-email" type="email" placeholder="Email" required>
+            <input id="su-pass" type="password" placeholder="Password (min 6 chars)" minlength="6" required>
+            <button>Create account</button>
+          </form>
+        </div>
+
+        <!-- Username onboarding after Google if needed -->
+        <div id="username-onboard" style="display:none;margin-top:8px">
+          <form id="unameForm">
+            <input id="uname-input" placeholder="Pick a username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+            <button>Save username</button>
+          </form>
+          <div class="tiny">This sets your chat name and reserves it.</div>
+        </div>
+
+        <div id="auth-msg" style="color:#8aa0b3;margin-top:6px;min-height:1.2em"></div>
       </div>
-
-      <div id="signin-pane">
-        <form id="signinForm">
-          <input id="si-email" type="email" placeholder="Email" required>
-          <input id="si-pass" type="password" placeholder="Password" required>
-          <button>Sign in</button>
-        </form>
-      </div>
-
-      <div id="signup-pane" style="display:none">
-        <form id="signupForm">
-          <input id="su-username" placeholder="Username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
-          <input id="su-email" type="email" placeholder="Email" required>
-          <input id="su-pass" type="password" placeholder="Password (min 6 chars)" minlength="6" required>
-          <button>Create account</button>
-        </form>
-      </div>
-
-      <!-- Username onboarding after Google if needed -->
-      <div id="username-onboard" style="display:none;margin-top:8px">
-        <form id="unameForm">
-          <input id="uname-input" placeholder="Pick a username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
-          <button>Save username</button>
-        </form>
-        <div class="tiny">This sets your chat name and reserves it.</div>
-      </div>
-
-      <div id="auth-msg" style="color:#8aa0b3;margin-top:6px;min-height:1.2em"></div>
 
       <!-- Mod panel -->
       <div id="modPanel" class="mod-panel">
         <h3>Muted/Banned users</h3>
         <div class="mod-search">
-          <input id="modSearch" placeholder="Search by uid, email, reason, status…">
+          <input id="modSearch" placeholder="Search by uid, reason, status…">
         </div>
         <div id="modList"></div>
       </div>
@@ -195,6 +202,7 @@
   const unamePane = document.getElementById('username-onboard');
   const unameForm = document.getElementById('unameForm');
   const unameInput= document.getElementById('uname-input');
+  const authArea  = document.getElementById('authArea');
   const modPanel  = document.getElementById('modPanel');
   const modSearch = document.getElementById('modSearch');
   const modList   = document.getElementById('modList');
@@ -204,16 +212,18 @@
   const tabSignup = document.getElementById('tab-signup');
   const signinPane= document.getElementById('signin-pane');
   const signupPane= document.getElementById('signup-pane');
-  tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; authMsg.textContent=''; };
-  tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; authMsg.textContent=''; };
+  tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
+  tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
 
   /* ====== Room & helpers ====== */
   const ROOM_ID = 'global';
   const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
   const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
+  const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
   const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
+  const modDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'mods', uid);
 
-  const MOD_EMAIL = 'fressolaben@gmail.com';
+  const OWNER_EMAIL = 'fressolaben@gmail.com';  // seed admin
   const MAX_LEN = 500;
 
   async function ensureRoom(){
@@ -222,12 +232,13 @@
     if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
 
+  // local block list
   const storageKey = 'blocked_uids';
   function getBlocked(){ try{ return new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); }catch{ return new Set(); } }
   function setBlocked(set){ localStorage.setItem(storageKey, JSON.stringify(Array.from(set))); }
   let blocked = getBlocked();
 
-  /* ====== Counter & Enter-to-send ====== */
+  /* ====== Char counter & Enter-to-send ====== */
   function updateCounter(){
     const len = input.value.length;
     counter.textContent = `${len} / ${MAX_LEN}`;
@@ -243,13 +254,12 @@
   });
   updateCounter();
 
-  /* ====== Time & parse ====== */
+  /* ====== Time helpers ====== */
   const mins = m => m*60*1000, hours = h => h*3600*1000, days = d => d*24*3600*1000;
   function fmtTime(ts){ try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
   function fmtDateTime(ms){ return new Date(ms).toLocaleString(); }
   function parseDuration(input){
     if (!input) return 0;
-    // examples: 10m, 2h, 3d
     const m = String(input).trim().match(/^(\d+)\s*([mhd])$/i);
     if (!m) return NaN;
     const val = parseInt(m[1],10), unit = m[2].toLowerCase();
@@ -259,12 +269,31 @@
     return NaN;
   }
 
+  /* ====== Mods set (for crowns & privileges) ====== */
+  let modUIDs = new Set();
+  function watchMods(){
+    onSnapshot(modsColl, (snap)=>{
+      const s = new Set();
+      snap.forEach(d=> s.add(d.id));
+      modUIDs = s;
+      paintHeaderCrown();
+    });
+  }
+  function isMod(uid, email){
+    return modUIDs.has(uid) || email === OWNER_EMAIL;
+  }
+  function paintHeaderCrown(){
+    if (!auth.currentUser) return;
+    const crown = isMod(auth.currentUser.uid, auth.currentUser.email) ? ' <span class="crown">👑</span>' : '';
+    whoami.innerHTML = `@${auth.currentUser.displayName || 'user'} · ${auth.currentUser.email || ''}${crown}`;
+  }
+
   /* ====== Render ====== */
   function makeMenu(msgDocId, m){
     const wrap = document.createElement('div');
     wrap.className = 'menu';
     const me = auth.currentUser?.uid === m.uid;
-    const isMod = auth.currentUser?.email === MOD_EMAIL;
+    const amMod = isMod(auth.currentUser?.uid, auth.currentUser?.email);
 
     function add(label, fn, danger=false){
       const b = document.createElement('button');
@@ -274,7 +303,7 @@
     }
 
     // Delete (owner or mod)
-    if (me || isMod) add('Delete message', async ()=> {
+    if (me || amMod) add('Delete message', async ()=> {
       await deleteDoc(doc(db, 'rooms', ROOM_ID, 'messages', msgDocId));
     }, true);
 
@@ -289,19 +318,17 @@
     });
 
     // Mod actions with prompts
-    if (isMod && m.uid){
+    if (amMod && m.uid){
       add('Mute…', async ()=>{
         const dur = prompt('Mute duration? (e.g., 10m, 1h, 1d)');
-        const ms = parseDuration(dur);
-        if (isNaN(ms) || ms<=0) { alert('Enter like 10m, 1h, 1d'); return; }
+        const ms = parseDuration(dur); if (isNaN(ms) || ms<=0) { alert('Enter like 10m, 1h, 1d'); return; }
         const reason = prompt('Reason for mute? (shown to user)') || '';
         await setMute(m.uid, ms, reason);
       }, true);
 
       add('Ban…', async ()=>{
         const dur = prompt('Ban duration? (e.g., 1h, 1d, 7d)');
-        const ms = parseDuration(dur);
-        if (isNaN(ms) || ms<=0) { alert('Enter like 1h, 1d, 7d'); return; }
+        const ms = parseDuration(dur); if (isNaN(ms) || ms<=0) { alert('Enter like 1h, 1d, 7d'); return; }
         const reason = prompt('Reason for ban? (shown to user)') || '';
         await setBan(m.uid, ms, reason);
       }, true);
@@ -313,7 +340,14 @@
       }, true);
 
       add('Unmute', ()=> setMute(m.uid, 0, ''));
-      add('Unban', ()=> setBan(m.uid, 0, ''));
+      add('Unban',  ()=> setBan(m.uid, 0, ''));
+
+      // Grant/remove moderator
+      if (modUIDs.has(m.uid)) {
+        add('Remove moderator', async ()=> { await setDoc(modDoc(m.uid), { isMod:false, removedAt: serverTimestamp() }); await deleteDoc(modDoc(m.uid)); });
+      } else {
+        add('Grant moderator', async ()=> { await setDoc(modDoc(m.uid), { isMod:true, by: auth.currentUser.email, at: serverTimestamp() }); });
+      }
     }
     return wrap;
   }
@@ -323,7 +357,13 @@
     const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
     row.dataset.uid = m.uid || '';
     const b = document.createElement('div'); b.className='bubble';
-    const name = document.createElement('div'); name.className='name'; name.textContent = m.name || 'Anon';
+    const name = document.createElement('div'); name.className='name';
+    const label = document.createElement('span'); label.textContent = m.name || 'Anon';
+    name.appendChild(label);
+    if (m.uid && modUIDs.has(m.uid)) {
+      const crown = document.createElement('span'); crown.className='crown'; crown.textContent='👑';
+      name.appendChild(crown);
+    }
     const text = document.createElement('div'); text.className='text'; text.textContent = m.text || '';
     const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
 
@@ -373,6 +413,7 @@
   /* ====== Email/Password auth ====== */
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!document.getElementById('su-username')) return;
     authMsg.textContent = 'Creating account…';
     const username = (document.getElementById('su-username').value || '').trim();
     const email = document.getElementById('su-email').value.trim();
@@ -410,7 +451,7 @@
     } catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
-  // Listen to your own ban/mute to reflect UI state
+  // Ban/mute UI state
   let sendingDisabledByBan = false;
   function showBanState(b){
     sendingDisabledByBan = false;
@@ -447,7 +488,7 @@
   }
   function noteSent(){ const now = Date.now(); sendTimes.push(now); lastSentAt = now; updateCounter(); }
 
-  // Mod actions: mute/ban (with reason)
+  // Mod actions (writes)
   async function setMute(uid, durationMs, reason){
     const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
     await setDoc(banDoc(uid), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
@@ -463,35 +504,33 @@
   // Sign out
   signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
 
-  // Render the mod panel list (muted/banned users)
+  // Mod list render
   function renderModList(allDocs){
     const q = (modSearch.value || '').toLowerCase();
     modList.innerHTML = '';
     allDocs.forEach(d=>{
       const b = d.data(); const uid = d.id;
-      const statusParts = [];
       const now = Date.now();
-      if (b.perma) statusParts.push('PERMA BAN');
-      if ((b.banUntil?.toMillis?.() ?? 0) > now) statusParts.push('BANNED');
-      if ((b.muteUntil?.toMillis?.() ?? 0) > now) statusParts.push('MUTED');
-      if (statusParts.length===0) return; // skip cleared entries
+      const status = [];
+      if (b.perma) status.push('PERMA BAN');
+      if ((b.banUntil?.toMillis?.() ?? 0) > now) status.push('BANNED');
+      if ((b.muteUntil?.toMillis?.() ?? 0) > now) status.push('MUTED');
+      if (status.length===0) return;
 
       const reason = b.reason || '';
-      const untilTxt = [];
-      if (b.perma) untilTxt.push('permanent');
-      if (b.banUntil) untilTxt.push('ban until ' + fmtDateTime(b.banUntil.toMillis ? b.banUntil.toMillis() : b.banUntil));
-      if (b.muteUntil) untilTxt.push('mute until ' + fmtDateTime(b.muteUntil.toMillis ? b.muteUntil.toMillis() : b.muteUntil));
-      const line = `${uid} · ${statusParts.join(', ')} · ${untilTxt.join(', ')}`.toLowerCase();
-      if (q && !line.includes(q) && !(reason.toLowerCase().includes(q))) return;
-
       const item = document.createElement('div'); item.className='ban-item';
+      const meta = document.createElement('div'); meta.className='meta';
       const who = document.createElement('div'); who.className='who'; who.textContent = uid;
-      const why = document.createElement('div'); why.className='why'; why.textContent = `${statusParts.join(', ')}${reason? ' — ' + reason : ''}`;
-      const actions = document.createElement('div');
+      const why = document.createElement('div'); why.className='why'; why.textContent = `${status.join(', ')}${reason? ' — ' + reason : ''}`;
+      meta.append(who, why);
+
+      const actions = document.createElement('div'); actions.className='ban-actions';
       const unmute = document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=> setMute(uid, 0, '');
-      const unban  = document.createElement('button'); unban.textContent='Unban'; unban.onclick=()=> setBan(uid, 0, '');
+      const unban  = document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=> setBan(uid, 0, '');
       actions.append(unmute, unban);
-      item.append(who, why, actions);
+
+      item.append(meta, actions);
+      if (q && !(uid.toLowerCase().includes(q) || reason.toLowerCase().includes(q) || status.join(', ').toLowerCase().includes(q))) return;
       modList.appendChild(item);
     });
   }
@@ -502,19 +541,23 @@
       authState.textContent = 'signed out';
       whoami.style.display='none';
       signoutBtn.style.display='none';
-      unamePane.style.display='none';
+      authArea.style.display='block';     // show sign-in if signed out
       modPanel.style.display='none';
+      unamePane.style.display='none';
       updateCounter();
       return;
     }
     authState.textContent = 'signed in';
-    whoami.textContent = `@${user.displayName || 'user'} · ${user.email || ''}`;
     whoami.style.display='inline-block';
     signoutBtn.style.display='inline-block';
+    authArea.style.display='none';        // hide sign-in when signed in
 
     await ensureRoom();
 
-    // If no reserved username, prompt onboarding
+    // watch mods and paint crown
+    watchMods();
+
+    // Username onboarding if not reserved
     let showOnboard = true;
     if (user.displayName) {
       const claimed = await getDoc(doc(db, 'usernames', user.displayName.toLowerCase()));
@@ -522,16 +565,12 @@
     }
     unamePane.style.display = showOnboard ? 'block' : 'none';
 
-    // Watch your own ban/mute doc for UI state
-    onSnapshot(banDoc(user.uid), (snap)=> showBanState(snap.data()||null));
-
-    // If mod, show mod panel and live list
-    const isMod = (user.email === MOD_EMAIL);
-    modPanel.style.display = isMod ? 'block' : 'none';
-    if (isMod) {
+    // If current user is mod/owner, show mod panel & live list
+    const iAmMod = isMod(user.uid, user.email);
+    modPanel.style.display = iAmMod ? 'block' : 'none';
+    if (iAmMod) {
       onSnapshot(bansColl, (snap)=>{
-        const docs = [];
-        snap.forEach(d=>docs.push(d));
+        const docs = []; snap.forEach(d=>docs.push(d));
         renderModList(docs);
       });
       modSearch.addEventListener('input', async ()=>{
@@ -540,6 +579,12 @@
         renderModList(docs);
       });
     }
+
+    // show self crown in header
+    paintHeaderCrown();
+
+    // ban/mute listener
+    onSnapshot(banDoc(user.uid), (snap)=> showBanState(snap.data()||null));
 
     const qy = query(msgsRef, orderBy('ts','asc'), limit(200));
     rtState.textContent = 'listening';
@@ -567,7 +612,30 @@
     };
   });
 
-  /* ====== Keep counter fresh ====== */
+  // ===== Username onboarding (after Google if needed)
+  unameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = (unameInput.value || '').trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) { if (authMsg) authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
+    try {
+      await claimUsernameTx(username, auth.currentUser.uid);
+      await updateProfile(auth.currentUser, { displayName: username });
+      await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
+      unamePane.style.display='none';
+      if (authMsg) authMsg.textContent='Username saved!';
+    } catch (err) { if (authMsg) authMsg.textContent = err.message || String(err); }
+  });
+
+  // ===== Google sign-in (popup + redirect fallback)
+  const provider = new GoogleAuthProvider();
+  const googleBtn = document.getElementById('googleBtn');
+  googleBtn.onclick = async () => {
+    try { if (auth.currentUser) await linkWithPopup(auth.currentUser, provider); else await signInWithPopup(auth, provider); if (authMsg) authMsg.textContent=''; updateCounter(); }
+    catch (err) { try { if (authMsg) authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth, provider); } catch (err2) { if (authMsg) authMsg.textContent=err2.message || String(err2); } }
+  };
+  getRedirectResult(auth).catch(err => { if (err && authMsg) authMsg.textContent = err.message || String(err); });
+
+  // Keep counter fresh
   setInterval(updateCounter, 300);
 </script>
 </body>
