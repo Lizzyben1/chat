@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Global Chat (Accounts + Google)</title>
+  <title>Global Chat (Accounts + Google + Anti-Spam)</title>
   <style>
     :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; }
     *{box-sizing:border-box}
@@ -14,26 +14,35 @@
     .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
     .row{display:flex;gap:16px;flex-wrap:wrap}
     .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
+
     /* Chat area */
     #messages{height:56vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px}
     .msg{display:flex}
     .bubble{
       background:#0e141c;border:1px solid var(--border);border-radius:14px;
       padding:10px 12px;max-width:80%;
-      word-break: break-word;        /* wrap long words */
-      overflow-wrap: anywhere;       /* wrap anywhere if needed */
+      word-break: break-word; overflow-wrap:anywhere;
     }
-    .bubble * { max-width:100%; }    /* prevent inner overflow */
+    .bubble *{max-width:100%}
     .me .bubble{background:#0b2036}
     .name{font-weight:600}
-    .text{white-space:pre-wrap}       /* keep newlines, wrap normally */
+    .text{white-space:pre-wrap}
     .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
-    .chat-form{display:flex;gap:8px;margin-top:10px;align-items:flex-end}
-    textarea{flex:1;min-height:42px;max-height:160px;resize:vertical;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
-    button{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer}
+
+    /* Input row */
+    .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
+    .input-wrap{flex:1;display:flex}
+    textarea{
+      flex:1; min-height:46px; max-height:160px; resize:vertical;
+      padding:12px; border-radius:12px; border:1px solid var(--border);
+      background:#0e141c; color:#e6eef6; width:100%;
+    }
+    button{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer}
     button[disabled]{opacity:.6;cursor:not-allowed}
-    .right{display:flex;gap:8px;margin-left:auto}
+    .below-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
     .tiny{font-size:12px;color:#8aa0b3}
+    .right{display:flex;gap:8px;margin-left:auto}
+
     /* Auth card */
     .auth form{display:grid;grid-template-columns:1fr;gap:8px}
     .tabs{display:flex;gap:8px;margin-bottom:8px}
@@ -57,13 +66,17 @@
     <!-- Chat -->
     <div class="card" style="flex:2">
       <div id="messages"></div>
+
       <form id="form" class="chat-form">
-        <div style="flex:1">
+        <div class="input-wrap">
           <textarea id="input" placeholder="Write a message…" maxlength="500"></textarea>
-          <div class="tiny" id="counter">0 / 500</div>
         </div>
         <button id="sendBtn" type="submit" disabled>Send</button>
       </form>
+      <div class="below-row">
+        <div class="tiny" id="counter">0 / 500</div>
+        <div class="tiny" id="throttleMsg"></div>
+      </div>
     </div>
 
     <!-- Auth -->
@@ -139,6 +152,7 @@
   const input = document.getElementById('input');
   const sendBtn = document.getElementById('sendBtn');
   const counter = document.getElementById('counter');
+  const throttleMsg = document.getElementById('throttleMsg');
   const authState = document.getElementById('auth-state');
   const rtState   = document.getElementById('rt-state');
   const whoami    = document.getElementById('whoami');
@@ -172,13 +186,19 @@
   function updateCounter(){
     const len = input.value.length;
     counter.textContent = `${len} / ${MAX_LEN}`;
-    sendBtn.disabled = (len === 0 || len > MAX_LEN || !auth.currentUser);
+    sendBtn.disabled = (len === 0 || len > MAX_LEN || !auth.currentUser || isRateLimited());
   }
   input.addEventListener('input', () => {
     updateCounter();
-    // Auto-size textarea up to max-height
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  });
+  // Enter=send, Shift+Enter=newline
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
   });
   updateCounter();
 
@@ -218,7 +238,6 @@
       authMsg.textContent = '';
       updateCounter();
     } catch (err) {
-      // Popup blocked? Use redirect flow.
       try {
         authMsg.textContent = (err.code || '') + ' — trying redirect…';
         await signInWithRedirect(auth, provider);
@@ -227,11 +246,7 @@
       }
     }
   };
-
-  // Handle redirect results (prevents “need to reload” feeling)
-  getRedirectResult(auth).catch(err => {
-    if (err) authMsg.textContent = err.message || String(err);
-  });
+  getRedirectResult(auth).catch(err => { if (err) authMsg.textContent = err.message || String(err); });
 
   // Sign up (email/password + unique username)
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
@@ -240,22 +255,16 @@
     const username = (document.getElementById('su-username').value || '').trim();
     const email = document.getElementById('su-email').value.trim();
     const pass  = document.getElementById('su-pass').value;
-
     if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
-
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       const uid = cred.user.uid;
-
       await claimUsernameTx(username, uid);
       await updateProfile(cred.user, { displayName: username });
       await setDoc(doc(db, 'users', uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
-
       authMsg.textContent = 'Account created. You are signed in.';
       updateCounter();
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
+    } catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
   // Sign in (email/password)
@@ -264,17 +273,12 @@
     authMsg.textContent = 'Signing in…';
     const email = document.getElementById('si-email').value.trim();
     const pass  = document.getElementById('si-pass').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      authMsg.textContent = 'Signed in.';
-      updateCounter();
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
+    try { await signInWithEmailAndPassword(auth, email, pass); authMsg.textContent = 'Signed in.'; updateCounter(); }
+    catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
   // Username onboarding (post-login, if missing/unclaimed)
-  unameForm.addEventListener('submit', async (e) => {
+  document.getElementById('unameForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = (unameInput.value || '').trim().toLowerCase();
     if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
@@ -284,10 +288,45 @@
       await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
       unamePane.style.display = 'none';
       authMsg.textContent = 'Username saved!';
-    } catch (err) {
-      authMsg.textContent = err.message || String(err);
-    }
+    } catch (err) { authMsg.textContent = err.message || String(err); }
   });
+
+  // --- Anti-spam/throttling ---
+  const sendTimes = [];              // timestamps (ms) of recent sends
+  let cooldownUntil = 0;             // epoch ms when cooldown ends
+  let lastSentAt = 0;                // last send time for 1/sec rule during cooldown
+
+  function isRateLimited(){
+    const now = Date.now();
+
+    // Purge >2s old timestamps
+    while (sendTimes.length && now - sendTimes[0] > 2000) sendTimes.shift();
+
+    // If we already hit cooldown, enforce 1/sec until it expires
+    if (now < cooldownUntil) {
+      const remaining = Math.ceil((cooldownUntil - now)/1000);
+      throttleMsg.textContent = `Slow mode: 1 msg/sec for ${remaining}s`;
+      // Enforce 1/sec
+      if (now - lastSentAt < 1000) return true;
+      return false;
+    } else {
+      throttleMsg.textContent = '';
+    }
+
+    // If more than 5 msgs in the last 2s, enter cooldown for 10s
+    if (sendTimes.length > 5) {
+      cooldownUntil = now + 10000;  // 10s
+      throttleMsg.textContent = `Slow mode: 1 msg/sec for 10s`;
+    }
+    return false;
+  }
+
+  function noteSent(){
+    const now = Date.now();
+    sendTimes.push(now);
+    lastSentAt = now;
+    updateCounter();
+  }
 
   // Sign out
   signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
@@ -328,17 +367,25 @@
     form.onsubmit = async (e) => {
       e.preventDefault();
       const text = input.value.trim();
-      if (!text || text.length > MAX_LEN) return; // hard client cap (500)
+      if (!text || text.length > MAX_LEN) return;
+
+      // rate limiting
+      if (isRateLimited()) { updateCounter(); return; }
+
       await addDoc(msgsRef, {
         uid: user.uid,
         name: user.displayName || 'Anon',
         text, ts: serverTimestamp()
       });
+      noteSent();
       input.value = '';
       updateCounter();
       scrollToBottom();
     };
   });
+
+  // Keep counter state fresh
+  setInterval(updateCounter, 300);
 </script>
 </body>
 </html>
