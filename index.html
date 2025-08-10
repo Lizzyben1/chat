@@ -15,65 +15,49 @@
   .row{display:flex;gap:16px;flex-wrap:wrap}
   .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
 
-  /* Chat area */
-  #messages{
-    height:56vh; display:flex; flex-direction:column; gap:10px;
-    scroll-behavior:smooth; padding-right:6px;
-    overflow-y:auto; overflow-x:hidden;        /* no bottom line */
-  }
-  .msg{display:flex; position:relative}
-  .bubble{
-    background:#0e141c;border:1px solid var(--border);border-radius:14px;
-    padding:10px 12px;max-width:80%;
-    word-break:break-word; overflow-wrap:anywhere;
-  }
+  /* Chat */
+  #messages{height:56vh;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px;overflow-y:auto;overflow-x:hidden}
+  .msg{display:flex;position:relative}
+  .bubble{background:#0e141c;border:1px solid var(--border);border-radius:14px;padding:10px 12px;max-width:80%;word-break:break-word;overflow-wrap:anywhere}
   .bubble *{max-width:100%}
   .me .bubble{background:#0b2036}
-  .name{font-weight:600; display:flex; align-items:center; gap:6px}
-  .crown{color:var(--gold); font-size:14px}
+  .name{font-weight:600;display:flex;align-items:center;gap:6px}
+  .crown{color:var(--gold);font-size:14px}
   .text{white-space:pre-wrap}
   .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
-  .menu-btn{
-    position:absolute; top:6px; right:6px; background:#0f1a25; border:1px solid var(--border);
-    border-radius:8px; padding:2px 6px; cursor:pointer; font-size:12px;
-  }
-  .menu{position:absolute; top:28px; right:6px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:210px}
-  .menu button{width:100%; text-align:left; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f1a25; color:#e6eef6; cursor:pointer; margin:4px 0}
-  .menu button.danger{border-color:#3b1f24; background:#2a1216; color:#ffb3b3}
+  .menu-btn{position:absolute;top:6px;right:6px;background:#0f1a25;border:1px solid var(--border);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
+  .menu{position:absolute;top:28px;right:6px;background:#0e141c;border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:210px}
+  .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer;margin:4px 0}
+  .menu button.danger{border-color:#3b1f24;background:#2a1216;color:#ffb3b3}
 
   /* Input row */
   .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
   .input-wrap{flex:1;display:flex}
-  textarea{
-    flex:1; min-height:46px; max-height:160px; resize:vertical;
-    padding:12px; border-radius:12px; border:1px solid var(--border);
-    background:#0e141c; color:#e6eef6; width:100%;
-  }
+  textarea{flex:1;min-height:46px;max-height:160px;resize:vertical;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0e141c;color:#e6eef6;width:100%}
   button{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer}
   button[disabled]{opacity:.6;cursor:not-allowed}
   .below-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
   .tiny{font-size:12px;color:#8aa0b3}
   .right{display:flex;gap:8px;margin-left:auto}
 
-  /* Auth & Mod cards */
+  /* Auth & Mods */
   .auth form{display:grid;grid-template-columns:1fr;gap:8px}
   .tabs{display:flex;gap:8px;margin-bottom:8px}
   .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
   .tab.active{background:#162536}
   .collapsed{opacity:.75}
   .collapsed .text{display:none}
-  .show-btn{margin-top:6px; font-size:12px; padding:4px 8px}
+  .show-btn{margin-top:6px;font-size:12px;padding:4px 8px}
 
-  .mod-panel{display:none; margin-top:12px}
-  .mod-panel h3{margin:8px 0 6px 0; font-size:16px}
-  .mod-search{display:flex; gap:8px}
-  .mod-search input{flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0e141c; color:#e6eef6}
-  .ban-item{display:flex; gap:12px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:10px; margin-top:8px; background:#0f1620}
-  .ban-item .meta{flex:1; min-width:0}
-  .ban-item .who{font-weight:600; overflow:hidden; text-overflow:ellipsis}
-  .ban-item .why{font-size:12px; color:#8aa0b3; overflow:hidden; text-overflow:ellipsis}
-  .ban-actions{display:flex; gap:8px; flex-wrap:wrap}
-  .label-mod{color:var(--gold); font-weight:600; margin-left:6px}
+  .mod-panel{display:none;margin-top:12px}
+  .mod-panel h3{margin:8px 0 6px 0;font-size:16px}
+  .mod-search{display:flex;gap:8px}
+  .mod-search input{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0e141c;color:#e6eef6}
+  .ban-item{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;background:#0f1620}
+  .ban-item .meta{flex:1;min-width:0}
+  .ban-item .who{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+  .ban-item .why{font-size:12px;color:#8aa0b3;overflow:hidden;text-overflow:ellipsis}
+  .ban-actions{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -92,11 +76,8 @@
     <!-- Chat -->
     <div class="card" style="flex:2">
       <div id="messages"></div>
-
       <form id="form" class="chat-form">
-        <div class="input-wrap">
-          <textarea id="input" placeholder="Write a message…" maxlength="500"></textarea>
-        </div>
+        <div class="input-wrap"><textarea id="input" placeholder="Write a message…" maxlength="500"></textarea></div>
         <button id="sendBtn" type="submit" disabled>Send</button>
       </form>
       <div class="below-row">
@@ -149,9 +130,7 @@
       <!-- Mod panel -->
       <div id="modPanel" class="mod-panel">
         <h3>Muted/Banned users</h3>
-        <div class="mod-search">
-          <input id="modSearch" placeholder="Search by uid, reason, status…">
-        </div>
+        <div class="mod-search"><input id="modSearch" placeholder="Search by uid, reason, status…"></div>
         <div id="modList"></div>
       </div>
     </div>
@@ -170,7 +149,7 @@
     serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  /* ====== Firebase config (yours) ====== */
+  // ---------- Firebase config ----------
   const firebaseConfig = {
     apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
     authDomain: "poopy-games-chat.firebaseapp.com",
@@ -185,7 +164,7 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  /* ====== DOM ====== */
+  // ---------- DOM ----------
   const messagesEl = document.getElementById('messages');
   const form = document.getElementById('form');
   const input = document.getElementById('input');
@@ -206,24 +185,22 @@
   const modPanel  = document.getElementById('modPanel');
   const modSearch = document.getElementById('modSearch');
   const modList   = document.getElementById('modList');
-
-  /* ====== Tabs ====== */
   const tabSignin = document.getElementById('tab-signin');
   const tabSignup = document.getElementById('tab-signup');
   const signinPane= document.getElementById('signin-pane');
   const signupPane= document.getElementById('signup-pane');
+
   tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
   tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
 
-  /* ====== Room & helpers ====== */
+  // ---------- Room / collections ----------
   const ROOM_ID = 'global';
   const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
   const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
   const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
   const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
   const modDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'mods', uid);
-
-  const OWNER_EMAIL = 'fressolaben@gmail.com';  // seed admin
+  const OWNER_EMAIL = 'fressolaben@gmail.com';
   const MAX_LEN = 500;
 
   async function ensureRoom(){
@@ -232,406 +209,231 @@
     if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
 
-  // local block list
+  // ---------- Local blocks ----------
   const storageKey = 'blocked_uids';
-  function getBlocked(){ try{ return new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); }catch{ return new Set(); } }
-  function setBlocked(set){ localStorage.setItem(storageKey, JSON.stringify(Array.from(set))); }
+  const getBlocked = ()=>{try{return new Set(JSON.parse(localStorage.getItem(storageKey)||'[]'))}catch{return new Set()}};
+  const setBlocked = (s)=>localStorage.setItem(storageKey, JSON.stringify(Array.from(s)));
   let blocked = getBlocked();
 
-  /* ====== Char counter & Enter-to-send ====== */
+  // ---------- Input / counter ----------
   function updateCounter(){
     const len = input.value.length;
     counter.textContent = `${len} / ${MAX_LEN}`;
-    sendBtn.disabled = (len === 0 || len > MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan);
+    sendBtn.disabled = (len===0 || len>MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan);
   }
-  input.addEventListener('input', () => {
-    updateCounter();
-    input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
-  });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
-  });
+  input.addEventListener('input', () => { updateCounter(); input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,160)+'px'; });
+  input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }});
   updateCounter();
 
-  /* ====== Time helpers ====== */
-  const mins = m => m*60*1000, hours = h => h*3600*1000, days = d => d*24*3600*1000;
-  function fmtTime(ts){ try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
-  function fmtDateTime(ms){ return new Date(ms).toLocaleString(); }
-  function parseDuration(input){
-    if (!input) return 0;
-    const m = String(input).trim().match(/^(\d+)\s*([mhd])$/i);
-    if (!m) return NaN;
-    const val = parseInt(m[1],10), unit = m[2].toLowerCase();
-    if (unit==='m') return mins(val);
-    if (unit==='h') return hours(val);
-    if (unit==='d') return days(val);
-    return NaN;
-  }
+  // ---------- Time helpers ----------
+  const mins = m=>m*60*1000, hours=h=>h*3600*1000, days=d=>d*24*3600*1000;
+  const fmtTime = ts=>{try{return new Date(ts?.toMillis?.()??ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch{return''}};
+  const fmtDateTime = ms=> new Date(ms).toLocaleString();
+  function parseDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?mins(v):u==='h'?hours(v):u==='d'?days(v):NaN; }
 
-  /* ====== Mods set (for crowns & privileges) ====== */
+  // ---------- Mods set / crowns ----------
   let modUIDs = new Set();
   function watchMods(){
-    onSnapshot(modsColl, (snap)=>{
-      const s = new Set();
-      snap.forEach(d=> s.add(d.id));
-      modUIDs = s;
-      paintHeaderCrown();
-    });
+    onSnapshot(modsColl, (snap)=>{ const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s; paintHeaderCrown(); });
   }
-  function isMod(uid, email){
-    return modUIDs.has(uid) || email === OWNER_EMAIL;
-  }
+  const isMod = (uid,email)=> modUIDs.has(uid) || email===OWNER_EMAIL;
   function paintHeaderCrown(){
-    if (!auth.currentUser) return;
+    if(!auth.currentUser) return;
     const crown = isMod(auth.currentUser.uid, auth.currentUser.email) ? ' <span class="crown">👑</span>' : '';
     whoami.innerHTML = `@${auth.currentUser.displayName || 'user'} · ${auth.currentUser.email || ''}${crown}`;
   }
 
-  /* ====== Render ====== */
-  function makeMenu(msgDocId, m){
-    const wrap = document.createElement('div');
-    wrap.className = 'menu';
-    const me = auth.currentUser?.uid === m.uid;
+  // ---------- Render messages ----------
+  function makeMenu(msgId, m){
+    const wrap=document.createElement('div'); wrap.className='menu';
+    const me = auth.currentUser?.uid===m.uid;
     const amMod = isMod(auth.currentUser?.uid, auth.currentUser?.email);
+    const add=(label,fn,danger=false)=>{const b=document.createElement('button'); b.textContent=label; if(danger)b.classList.add('danger'); b.onclick=async(e)=>{e.stopPropagation();wrap.style.display='none';await fn();}; wrap.appendChild(b);};
 
-    function add(label, fn, danger=false){
-      const b = document.createElement('button');
-      b.textContent = label; if (danger) b.classList.add('danger');
-      b.onclick = async (e)=>{ e.stopPropagation(); wrap.style.display='none'; await fn(); };
-      wrap.appendChild(b);
-    }
+    if(me||amMod) add('Delete message', ()=>deleteDoc(doc(db,'rooms',ROOM_ID,'messages',msgId)), true);
 
-    // Delete (owner or mod)
-    if (me || amMod) add('Delete message', async ()=> {
-      await deleteDoc(doc(db, 'rooms', ROOM_ID, 'messages', msgDocId));
-    }, true);
+    const isBlk = blocked.has(m.uid);
+    add(isBlk?'Unblock user (local)':'Block user (local)', ()=>{ if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid); setBlocked(blocked); document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed',blocked.has(m.uid))); });
 
-    // Block/unblock (local)
-    const isBlocked = blocked.has(m.uid);
-    add(isBlocked ? 'Unblock user (local)' : 'Block user (local)', async ()=>{
-      if (blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid);
-      setBlocked(blocked);
-      document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>{
-        el.classList.toggle('collapsed', blocked.has(m.uid));
-      });
-    });
-
-    // Mod actions with prompts
-    if (amMod && m.uid){
-      add('Mute…', async ()=>{
-        const dur = prompt('Mute duration? (e.g., 10m, 1h, 1d)');
-        const ms = parseDuration(dur); if (isNaN(ms) || ms<=0) { alert('Enter like 10m, 1h, 1d'); return; }
-        const reason = prompt('Reason for mute? (shown to user)') || '';
-        await setMute(m.uid, ms, reason);
-      }, true);
-
-      add('Ban…', async ()=>{
-        const dur = prompt('Ban duration? (e.g., 1h, 1d, 7d)');
-        const ms = parseDuration(dur); if (isNaN(ms) || ms<=0) { alert('Enter like 1h, 1d, 7d'); return; }
-        const reason = prompt('Reason for ban? (shown to user)') || '';
-        await setBan(m.uid, ms, reason);
-      }, true);
-
-      add('Perma-ban', async ()=>{
-        const reason = prompt('Reason for permanent ban? (shown to user)') || '';
-        if (!confirm('Are you sure you want to PERMANENTLY ban this user?')) return;
-        await setPerma(m.uid, reason);
-      }, true);
-
-      add('Unmute', ()=> setMute(m.uid, 0, ''));
-      add('Unban',  ()=> setBan(m.uid, 0, ''));
-
-      // Grant/remove moderator
-      if (modUIDs.has(m.uid)) {
-        add('Remove moderator', async ()=> { await setDoc(modDoc(m.uid), { isMod:false, removedAt: serverTimestamp() }); await deleteDoc(modDoc(m.uid)); });
-      } else {
-        add('Grant moderator', async ()=> { await setDoc(modDoc(m.uid), { isMod:true, by: auth.currentUser.email, at: serverTimestamp() }); });
-      }
+    if(amMod && m.uid){
+      add('Mute…', async ()=>{ const dur=prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 10m, 1h, 1d');return;} const reason=prompt('Reason (shown to user)')||''; await setMute(m.uid,ms,reason); }, true);
+      add('Ban…',  async ()=>{ const dur=prompt('Ban duration? (e.g., 1h, 1d, 7d)');  const ms=parseDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 1h, 1d, 7d');return;} const reason=prompt('Reason (shown to user)')||''; await setBan(m.uid,ms,reason); }, true);
+      add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason); }, true);
+      add('Unmute', ()=>setMute(m.uid,0,''));
+      add('Unban',  ()=>setBan(m.uid,0,''));
+      if(modUIDs.has(m.uid)) add('Remove moderator', ()=>deleteDoc(modDoc(m.uid)));
+      else add('Grant moderator', ()=>setDoc(modDoc(m.uid),{isMod:true,by:auth.currentUser.email,at:serverTimestamp()}));
     }
     return wrap;
   }
 
   function renderMessage(docSnap, meUid){
-    const m = docSnap.data();
-    const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
-    row.dataset.uid = m.uid || '';
-    const b = document.createElement('div'); b.className='bubble';
-    const name = document.createElement('div'); name.className='name';
-    const label = document.createElement('span'); label.textContent = m.name || 'Anon';
-    name.appendChild(label);
-    if (m.uid && modUIDs.has(m.uid)) {
-      const crown = document.createElement('span'); crown.className='crown'; crown.textContent='👑';
-      name.appendChild(crown);
-    }
-    const text = document.createElement('div'); text.className='text'; text.textContent = m.text || '';
-    const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
+    const m=docSnap.data();
+    const row=document.createElement('div'); row.className='msg'+(m.uid===meUid?' me':''); row.dataset.uid=m.uid||'';
+    const b=document.createElement('div'); b.className='bubble';
+    const name=document.createElement('div'); name.className='name';
+    const label=document.createElement('span'); label.textContent=m.name||'Anon'; name.appendChild(label);
+    if(m.uid && modUIDs.has(m.uid)){const cr=document.createElement('span'); cr.className='crown'; cr.textContent='👑'; name.appendChild(cr);}
+    const text=document.createElement('div'); text.className='text'; text.textContent=m.text||'';
+    const ts=document.createElement('div'); ts.className='ts'; ts.textContent=fmtTime(m.ts);
 
-    const menuBtn = document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
-    const menu = makeMenu(docSnap.id, m);
-    menuBtn.onclick = (e)=>{ e.stopPropagation(); menu.style.display = (menu.style.display==='block'?'none':'block'); };
-    document.addEventListener('click', ()=> menu.style.display='none');
+    const menuBtn=document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
+    const menu=makeMenu(docSnap.id,m);
+    menuBtn.onclick=(e)=>{e.stopPropagation(); menu.style.display=(menu.style.display==='block'?'none':'block');};
+    document.addEventListener('click',()=>menu.style.display='none');
 
-    b.append(name, text, ts);
-    row.appendChild(b);
-    row.appendChild(menuBtn);
-    row.appendChild(menu);
-    if (blocked.has(m.uid)) row.classList.add('collapsed');
-
-    if (blocked.has(m.uid)){
-      const show = document.createElement('button');
-      show.className='show-btn';
-      show.textContent='Show message';
-      show.onclick = (e)=>{ e.stopPropagation(); row.classList.remove('collapsed'); show.remove(); };
-      b.appendChild(show);
-    }
-
+    b.append(name,text,ts); row.append(b,menuBtn,menu);
+    if(blocked.has(m.uid)) row.classList.add('collapsed');
+    if(blocked.has(m.uid)){const show=document.createElement('button'); show.className='show-btn'; show.textContent='Show message'; show.onclick=(e)=>{e.stopPropagation(); row.classList.remove('collapsed'); show.remove();}; b.appendChild(show);}
     messagesEl.appendChild(row);
   }
 
+  const fmtTimeStamp = t=> new Date(t).toLocaleString();
   function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-  /* ====== Username registry ====== */
+  // ---------- Username registry ----------
   async function claimUsernameTx(username, uid){
-    const uname = username.toLowerCase();
-    const unameRef = doc(db, 'usernames', uname);
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(unameRef);
-      if (snap.exists()) throw new Error('Username is taken');
-      tx.set(unameRef, { uid, at: serverTimestamp() });
-    });
+    const uname=username.toLowerCase(); const unameRef=doc(db,'usernames',uname);
+    await runTransaction(db,async(tx)=>{ const s=await tx.get(unameRef); if(s.exists()) throw new Error('Username is taken'); tx.set(unameRef,{uid,at:serverTimestamp()}); });
   }
 
- 
+  // ---------- Google sign-in (single definition) ----------
+  const provider = new GoogleAuthProvider();
+  googleBtn.onclick = async ()=>{
+    try{ if(auth.currentUser) await linkWithPopup(auth.currentUser,provider); else await signInWithPopup(auth,provider); if(authMsg) authMsg.textContent=''; updateCounter(); }
+    catch(err){ try{ if(authMsg) authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth,provider); } catch(err2){ if(authMsg) authMsg.textContent=err2.message||String(err2);} }
+  };
+  getRedirectResult(auth).catch(err=>{ if(err && authMsg) authMsg.textContent = err.message || String(err); });
 
-
-  /* ====== Email/Password auth ====== */
-  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  // ---------- Email/Password ----------
+  document.getElementById('signupForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
-    if (!document.getElementById('su-username')) return;
-    authMsg.textContent = 'Creating account…';
-    const username = (document.getElementById('su-username').value || '').trim();
-    const email = document.getElementById('su-email').value.trim();
-    const pass  = document.getElementById('su-pass').value;
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await claimUsernameTx(username, cred.user.uid);
-      await updateProfile(cred.user, { displayName: username });
-      await setDoc(doc(db, 'users', cred.user.uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
-      authMsg.textContent = 'Account created. You are signed in.'; updateCounter();
-    } catch (err) { authMsg.textContent = err.message || String(err); }
+    const username=(document.getElementById('su-username').value||'').trim();
+    const email=document.getElementById('su-email').value.trim();
+    const pass=document.getElementById('su-pass').value;
+    if(!/^[a-z0-9_]{3,20}$/i.test(username)){authMsg.textContent='Use 3–20 chars: a–z, 0–9, _';return;}
+    try{ const cred=await createUserWithEmailAndPassword(auth,email,pass); await claimUsernameTx(username,cred.user.uid); await updateProfile(cred.user,{displayName:username}); await setDoc(doc(db,'users',cred.user.uid),{username,email,createdAt:serverTimestamp()},{merge:true}); authMsg.textContent='Account created. You are signed in.'; updateCounter(); }
+    catch(err){ authMsg.textContent = err.message || String(err); }
+  });
+  document.getElementById('signinForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email=document.getElementById('si-email').value.trim();
+    const pass =document.getElementById('si-pass').value;
+    try{ await signInWithEmailAndPassword(auth,email,pass); authMsg.textContent='Signed in.'; updateCounter(); }
+    catch(err){ authMsg.textContent = err.message || String(err); }
   });
 
-  document.getElementById('signinForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    authMsg.textContent = 'Signing in…';
-    const email = document.getElementById('si-email').value.trim();
-    const pass  = document.getElementById('si-pass').value;
-    try { await signInWithEmailAndPassword(auth, email, pass); authMsg.textContent='Signed in.'; updateCounter(); }
-    catch (err) { authMsg.textContent = err.message || String(err); }
-  });
-
-  // Username onboarding after Google if needed
-  unameForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = (unameInput.value || '').trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
-    try {
-      await claimUsernameTx(username, auth.currentUser.uid);
-      await updateProfile(auth.currentUser, { displayName: username });
-      await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
-      unamePane.style.display='none';
-      authMsg.textContent='Username saved!';
-    } catch (err) { authMsg.textContent = err.message || String(err); }
-  });
-
-  // Ban/mute UI state
-  let sendingDisabledByBan = false;
+  // ---------- Ban/mute UI state ----------
+  let sendingDisabledByBan=false;
   function showBanState(b){
-    sendingDisabledByBan = false;
-    banNotice.textContent = '';
-    const now = Date.now();
-    if (!b) return;
-    const perma = !!b.perma;
-    const muteUntil = b.muteUntil?.toMillis?.() ?? 0;
-    const banUntil  = b.banUntil?.toMillis?.() ?? 0;
-    const reason = b.reason || '';
-
-    if (perma || banUntil > now){
-      sendingDisabledByBan = true;
-      banNotice.textContent = (perma ? 'Permanently banned' : `Banned until ${fmtDateTime(banUntil)}`) + (reason ? ` — Reason: ${reason}` : '');
-    } else if (muteUntil > now){
-      sendingDisabledByBan = true;
-      banNotice.textContent = `Muted until ${fmtDateTime(muteUntil)}` + (reason ? ` — Reason: ${reason}` : '');
-    }
+    sendingDisabledByBan=false; banNotice.textContent='';
+    const now=Date.now(); if(!b) return;
+    const perma=!!b.perma, muteUntil=b.muteUntil?.toMillis?.()??0, banUntil=b.banUntil?.toMillis?.()??0, reason=b.reason||'';
+    if(perma || banUntil>now){ sendingDisabledByBan=true; banNotice.textContent=(perma?'Permanently banned':`Banned until ${fmtDateTime(banUntil)}`)+(reason?` — Reason: ${reason}`:''); }
+    else if(muteUntil>now){ sendingDisabledByBan=true; banNotice.textContent=`Muted until ${fmtDateTime(muteUntil)}`+(reason?` — Reason: ${reason}`:''); }
   }
 
-  /* ====== Anti-spam/throttling ====== */
-  const sendTimes = []; let cooldownUntil = 0; let lastSentAt = 0;
+  // ---------- Anti-spam ----------
+  const sendTimes=[]; let cooldownUntil=0; let lastSentAt=0;
   function isRateLimited(){
-    const now = Date.now();
-    while (sendTimes.length && now - sendTimes[0] > 2000) sendTimes.shift();
-    if (now < cooldownUntil) {
-      const remaining = Math.ceil((cooldownUntil - now)/1000);
-      throttleMsg.textContent = `Slow mode: 1 msg/sec for ${remaining}s`;
-      if (now - lastSentAt < 1000) return true;
-      return false;
-    } else throttleMsg.textContent = '';
-    if (sendTimes.length > 5) { cooldownUntil = now + 10000; throttleMsg.textContent = 'Slow mode: 1 msg/sec for 10s'; }
-    return false;
+    const now=Date.now(); while(sendTimes.length && now-sendTimes[0]>2000) sendTimes.shift();
+    if(now<cooldownUntil){ const rem=Math.ceil((cooldownUntil-now)/1000); throttleMsg.textContent=`Slow mode: 1 msg/sec for ${rem}s`; if(now-lastSentAt<1000) return true; return false; }
+    throttleMsg.textContent=''; if(sendTimes.length>5){ cooldownUntil=now+10000; throttleMsg.textContent='Slow mode: 1 msg/sec for 10s'; } return false;
   }
-  function noteSent(){ const now = Date.now(); sendTimes.push(now); lastSentAt = now; updateCounter(); }
+  const noteSent=()=>{ const n=Date.now(); sendTimes.push(n); lastSentAt=n; updateCounter(); };
 
-  // Mod actions (writes)
-  async function setMute(uid, durationMs, reason){
-    const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
-    await setDoc(banDoc(uid), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
-  }
-  async function setBan(uid, durationMs, reason){
-    const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
-    await setDoc(banDoc(uid), { banUntil: until, perma:false, by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
-  }
-  async function setPerma(uid, reason){
-    await setDoc(banDoc(uid), { perma:true, banUntil: new Date(86400000), by: auth.currentUser.email, at: serverTimestamp(), reason: reason || '' }, { merge:true });
-  }
+  // ---------- Mod writes ----------
+  async function setMute(uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setBan (uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setPerma(uid,reason){ await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
 
-  // Sign out
-  signoutBtn.onclick = async () => { await signOut(auth); updateCounter(); };
+  // ---------- Sign out ----------
+  signoutBtn.onclick = async ()=>{ await signOut(auth); updateCounter(); };
 
-  // Mod list render
+  // ---------- Mod list render ----------
   function renderModList(allDocs){
-    const q = (modSearch.value || '').toLowerCase();
-    modList.innerHTML = '';
+    const q=(modSearch.value||'').toLowerCase(); modList.innerHTML='';
     allDocs.forEach(d=>{
-      const b = d.data(); const uid = d.id;
-      const now = Date.now();
-      const status = [];
-      if (b.perma) status.push('PERMA BAN');
-      if ((b.banUntil?.toMillis?.() ?? 0) > now) status.push('BANNED');
-      if ((b.muteUntil?.toMillis?.() ?? 0) > now) status.push('MUTED');
-      if (status.length===0) return;
+      const b=d.data(), uid=d.id, now=Date.now();
+      const status=[]; if(b.perma) status.push('PERMA BAN'); if((b.banUntil?.toMillis?.()??0)>now) status.push('BANNED'); if((b.muteUntil?.toMillis?.()??0)>now) status.push('MUTED');
+      if(status.length===0) return;
+      const reason=b.reason||'';
+      if(q && ![uid,reason,status.join(', ')].join(' ').toLowerCase().includes(q)) return;
 
-      const reason = b.reason || '';
-      const item = document.createElement('div'); item.className='ban-item';
-      const meta = document.createElement('div'); meta.className='meta';
-      const who = document.createElement('div'); who.className='who'; who.textContent = uid;
-      const why = document.createElement('div'); why.className='why'; why.textContent = `${status.join(', ')}${reason? ' — ' + reason : ''}`;
-      meta.append(who, why);
+      const item=document.createElement('div'); item.className='ban-item';
+      const meta=document.createElement('div'); meta.className='meta';
+      const who=document.createElement('div'); who.className='who'; who.textContent=uid;
+      const why=document.createElement('div'); why.className='why'; why.textContent=`${status.join(', ')}${reason?' — '+reason:''}`;
+      meta.append(who,why);
 
-      const actions = document.createElement('div'); actions.className='ban-actions';
-      const unmute = document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=> setMute(uid, 0, '');
-      const unban  = document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=> setBan(uid, 0, '');
-      actions.append(unmute, unban);
+      const actions=document.createElement('div'); actions.className='ban-actions';
+      const unmute=document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=>setMute(uid,0,'');
+      const unban =document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=>setBan(uid,0,'');
+      actions.append(unmute,unban);
 
-      item.append(meta, actions);
-      if (q && !(uid.toLowerCase().includes(q) || reason.toLowerCase().includes(q) || status.join(', ').toLowerCase().includes(q))) return;
-      modList.appendChild(item);
+      item.append(meta,actions); modList.appendChild(item);
     });
   }
 
-  // Auth + realtime
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      authState.textContent = 'signed out';
-      whoami.style.display='none';
-      signoutBtn.style.display='none';
-      authArea.style.display='block';     // show sign-in if signed out
-      modPanel.style.display='none';
-      unamePane.style.display='none';
-      updateCounter();
-      return;
+  // ---------- Auth + realtime ----------
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+      authState.textContent='signed out';
+      whoami.style.display='none'; signoutBtn.style.display='none';
+      authArea.style.display='block'; modPanel.style.display='none'; unamePane.style.display='none';
+      updateCounter(); return;
     }
-    authState.textContent = 'signed in';
-    whoami.style.display='inline-block';
-    signoutBtn.style.display='inline-block';
-    authArea.style.display='none';        // hide sign-in when signed in
+    authState.textContent='signed in';
+    whoami.style.display='inline-block'; signoutBtn.style.display='inline-block';
+    authArea.style.display='none';
 
     await ensureRoom();
-
-    // watch mods and paint crown
-    watchMods();
-
-    // Username onboarding if not reserved
-    let showOnboard = true;
-    if (user.displayName) {
-      const claimed = await getDoc(doc(db, 'usernames', user.displayName.toLowerCase()));
-      showOnboard = !(claimed.exists() && claimed.data().uid === user.uid);
-    }
-    unamePane.style.display = showOnboard ? 'block' : 'none';
-
-    // If current user is mod/owner, show mod panel & live list
-    const iAmMod = isMod(user.uid, user.email);
-    modPanel.style.display = iAmMod ? 'block' : 'none';
-    if (iAmMod) {
-      onSnapshot(bansColl, (snap)=>{
-        const docs = []; snap.forEach(d=>docs.push(d));
-        renderModList(docs);
-      });
-      modSearch.addEventListener('input', async ()=>{
-        const snap = await getDocs(bansColl);
-        const docs=[]; snap.forEach(d=>docs.push(d));
-        renderModList(docs);
-      });
-    }
-
-    // show self crown in header
+    watchMods();            // start crowns
     paintHeaderCrown();
 
-    // ban/mute listener
-    onSnapshot(banDoc(user.uid), (snap)=> showBanState(snap.data()||null));
+    // Username onboarding if not reserved
+    let showOnboard=true;
+    if(user.displayName){
+      const claimed=await getDoc(doc(db,'usernames',user.displayName.toLowerCase()));
+      showOnboard=!(claimed.exists() && claimed.data().uid===user.uid);
+    }
+    unamePane.style.display=showOnboard?'block':'none';
 
-    const qy = query(msgsRef, orderBy('ts','asc'), limit(200));
-    rtState.textContent = 'listening';
-    onSnapshot(qy, (snap) => {
-      messagesEl.innerHTML = '';
-      snap.forEach(d => renderMessage(d, user.uid));
-      scrollToBottom();
-    });
+    // If mod/owner, show panel
+    const iAmMod = isMod(user.uid, user.email);
+    modPanel.style.display = iAmMod ? 'block' : 'none';
+    if(iAmMod){
+      onSnapshot(bansColl,(snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
+      modSearch.addEventListener('input', async ()=>{ const snap=await getDocs(bansColl); const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
+    }
 
-    form.onsubmit = async (e) => {
+    onSnapshot(banDoc(user.uid),(snap)=>showBanState(snap.data()||null));
+
+    const qy=query(msgsRef, orderBy('ts','asc'), limit(200));
+    rtState.textContent='listening';
+    onSnapshot(qy,(snap)=>{ messagesEl.innerHTML=''; snap.forEach(d=>renderMessage(d,user.uid)); scrollToBottom(); });
+
+    form.onsubmit = async (e)=>{
       e.preventDefault();
-      const text = input.value.trim();
-      if (!text || text.length > MAX_LEN) return;
-      if (sendingDisabledByBan || isRateLimited()) { updateCounter(); return; }
-
-      await addDoc(msgsRef, {
-        uid: user.uid,
-        name: user.displayName || 'Anon',
-        text, ts: serverTimestamp()
-      });
-      noteSent();
-      input.value = '';
-      updateCounter();
-      scrollToBottom();
+      const text=input.value.trim();
+      if(!text || text.length>MAX_LEN) return;
+      if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
+      await addDoc(msgsRef,{ uid:user.uid, name:user.displayName||'Anon', text, ts:serverTimestamp() });
+      noteSent(); input.value=''; updateCounter(); scrollToBottom();
     };
   });
 
-  // ===== Username onboarding (after Google if needed)
-  unameForm.addEventListener('submit', async (e) => {
+  // ---------- Username onboarding submit ----------
+  unameForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const username = (unameInput.value || '').trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) { if (authMsg) authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
-    try {
-      await claimUsernameTx(username, auth.currentUser.uid);
-      await updateProfile(auth.currentUser, { displayName: username });
-      await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
-      unamePane.style.display='none';
-      if (authMsg) authMsg.textContent='Username saved!';
-    } catch (err) { if (authMsg) authMsg.textContent = err.message || String(err); }
+    const username=(unameInput.value||'').trim().toLowerCase();
+    if(!/^[a-z0-9_]{3,20}$/i.test(username)){ if(authMsg) authMsg.textContent='Use 3–20 chars: a–z, 0–9, _'; return; }
+    try{ await claimUsernameTx(username,auth.currentUser.uid); await updateProfile(auth.currentUser,{displayName:username}); await setDoc(doc(db,'users',auth.currentUser.uid),{username,lastUpdated:serverTimestamp()},{merge:true}); unamePane.style.display='none'; if(authMsg) authMsg.textContent='Username saved!'; paintHeaderCrown(); }
+    catch(err){ if(authMsg) authMsg.textContent=err.message||String(err); }
   });
 
-  // ===== Google sign-in (popup + redirect fallback)
-  const provider = new GoogleAuthProvider();
-  const googleBtn = document.getElementById('googleBtn');
-  googleBtn.onclick = async () => {
-    try { if (auth.currentUser) await linkWithPopup(auth.currentUser, provider); else await signInWithPopup(auth, provider); if (authMsg) authMsg.textContent=''; updateCounter(); }
-    catch (err) { try { if (authMsg) authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth, provider); } catch (err2) { if (authMsg) authMsg.textContent=err2.message || String(err2); } }
-  };
-  getRedirectResult(auth).catch(err => { if (err && authMsg) authMsg.textContent = err.message || String(err); });
-
-  // Keep counter fresh
-  setInterval(updateCounter, 300);
+  // keep UI fresh
+  setInterval(updateCounter,300);
 </script>
 </body>
 </html>
