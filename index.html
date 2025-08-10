@@ -93,7 +93,7 @@
       <div class="tiny" id="banNotice" style="margin-top:6px;color:#ffb3b3"></div>
     </div>
 
-    <!-- Right column (auth/mods). Hidden for non-mods -->
+    <!-- Right column -->
     <div id="sideCol" class="card auth" style="flex:1">
       <div id="authArea">
         <button id="googleBtn" style="width:100%;margin-bottom:10px">Continue with Google</button>
@@ -227,7 +227,7 @@
     if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
 
-  // ---------- Device ID (best-effort carry across accounts; client-side only) ----------
+  // ---------- Device ID (client-side only) ----------
   function getDeviceId(){
     let id = localStorage.getItem('device_id');
     if (!id) { id = crypto.randomUUID(); localStorage.setItem('device_id', id); }
@@ -255,20 +255,35 @@
   const mins = m=>m*60*1000, hours=h=>h*3600*1000, days=d=>d*24*3600*1000;
   const fmtTime = ts=>{try{return new Date(ts?.toMillis?.()??ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch{return''}};
   const fmtDateTime = ms=> new Date(ms).toLocaleString();
+  function parseHumanDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
 
-  // ---------- Mods set / crowns (any authed user may read mods) ----------
-  let modUIDs = new Set();
-  function watchModsFor(uid,email){
+  // ---------- Mods state ----------
+  let modUIDs = new Set();         // for crowns / menus
+  let myIsModCached = null;        // for reload-on-change (my doc only)
+
+  // 1) watch entire mods list ONLY to paint crowns (no reloads here)
+  function watchModsList(){
     onSnapshot(modsColl, (snap)=>{
-      const before = modUIDs;
       const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s;
       paintHeaderCrown();
-      const was = before.has(uid) || email===OWNER_EMAIL;
-      const now = s.has(uid)     || email===OWNER_EMAIL;
-      if (was !== now) location.reload(); // auto-reload target when mod status flips
     });
   }
+
+  // 2) watch my own mod doc and reload exactly once when it flips
+  function watchMyModDoc(uid, email){
+    const myDocRef = modDoc(uid);
+    onSnapshot(myDocRef, (snap)=>{
+      const nowIsMod = (snap.exists() || email===OWNER_EMAIL);
+      if (myIsModCached === null) { myIsModCached = nowIsMod; return; } // first value, just cache
+      if (nowIsMod !== myIsModCached) {
+        myIsModCached = nowIsMod;
+        location.reload(); // flip detected → reload once
+      }
+    });
+  }
+
   const isMod = (uid,email)=> modUIDs.has(uid) || email===OWNER_EMAIL;
+
   function paintHeaderCrown(){
     if(!auth.currentUser) return;
     const crown = isMod(auth.currentUser.uid, auth.currentUser.email) ? ' <span class="crown">👑</span>' : '';
@@ -278,7 +293,24 @@
   // ---------- Grouping state ----------
   let lastUid = null, lastTsMs = 0;
 
-  // ---------- Render messages (with grouping) ----------
+  // ---------- Render messages ----------
+  async function grantMod(targetUid){
+    try {
+      await setDoc(modDoc(targetUid), { isMod:true, by:auth.currentUser.uid, at:serverTimestamp() }, { merge:true });
+    } catch (e) {
+      alert('Grant mod failed: ' + (e.message || String(e)));
+      console.error(e);
+    }
+  }
+  async function removeMod(targetUid){
+    try {
+      await deleteDoc(modDoc(targetUid));
+    } catch (e) {
+      alert('Remove mod failed: ' + (e.message || String(e)));
+      console.error(e);
+    }
+  }
+
   function makeMenu(msgId, m){
     const wrap=document.createElement('div'); wrap.className='menu';
     const me = auth.currentUser?.uid===m.uid;
@@ -297,9 +329,13 @@
       add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason); }, true);
       add('Unmute', ()=>setMute(m.uid,0,''));
       add('Unban',  ()=>setBan(m.uid,0,''));
-      if (m.email === OWNER_EMAIL) add('Owner (cannot be changed)', ()=>{});
-      else if(modUIDs.has(m.uid)) add('Remove moderator', ()=>deleteDoc(modDoc(m.uid)));
-      else add('Grant moderator', ()=>setDoc(modDoc(m.uid),{isMod:true,by:auth.currentUser.email,at:serverTimestamp()}));
+      if (m.email === OWNER_EMAIL) {
+        add('Owner (cannot be changed)', ()=>{});
+      } else if(modUIDs.has(m.uid)) {
+        add('Remove moderator', ()=> removeMod(m.uid));
+      } else {
+        add('Grant moderator', ()=> grantMod(m.uid));
+      }
     }
     return wrap;
   }
@@ -335,7 +371,6 @@
   }
 
   function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
-  function parseHumanDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
 
   // ---------- Username registry ----------
   async function claimUsernameTx(username, uid){
@@ -409,7 +444,7 @@
 
   async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
     await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
-    // simple escalating mute stored per-user (client-side write; mods can see)
+    // simple escalating mute stored per-user (client-side)
     const ref = doc(db, 'rooms', ROOM_ID, 'automod', uid);
     const snap = await getDoc(ref);
     const now = Date.now();
@@ -434,7 +469,7 @@
       const status=[]; if(b.perma) status.push('PERMA BAN'); if((b.banUntil?.toMillis?.()??0)>now) status.push('BANNED'); if((b.muteUntil?.toMillis?.()??0)>now) status.push('MUTED');
       if(status.length===0) return;
       const reason=b.reason||'';
-      if(q && ![uid,reason,status.join(', ')].join(' ').toLowerCase().includes(q)) return;
+      if(q && ![uid,reason,status.join(', ')].toString().toLowerCase().includes(q)) return;
 
       const item=document.createElement('div'); item.className='ban-item';
       const meta=document.createElement('div'); meta.className='meta';
@@ -483,27 +518,28 @@
     if(!user){
       authState.textContent='signed out';
       whoami.style.display='none'; signoutBtn.style.display='none';
-      authArea.style.display='block'; sideCol.style.display='block'; // show sign-in column when logged out
+      authArea.style.display='block'; sideCol.style.display='block';
       modPanel.style.display='none'; unamePane.style.display='none';
-      // Make chat not squished when logged out
       chatCol.style.flex='1 1 100%';
-      updateCounter(); return;
+      return;
     }
     authState.textContent='signed in';
     whoami.style.display='inline-block'; signoutBtn.style.display='inline-block';
     authArea.style.display='none';
 
-    // Allow chat to take full width by default; we’ll show side column only for mods
-    chatCol.style.flex='1 1 100%';
+    // default: hide side for non-mod until we know
     sideCol.style.display='none';
+    chatCol.style.flex='1 1 100%';
 
     await ensureRoom();
 
-    // attach device id to profile (client-side signal only)
+    // profile (device id stored for UI-only purposes)
     await setDoc(doc(db,'users',user.uid), { email:user.email||'', username:user.displayName||'', deviceId, lastSeen:serverTimestamp() }, { merge:true });
 
-    // watch mods & crowns; reload target if my status flips
-    watchModsFor(user.uid, user.email);
+    // mods listeners
+    watchModsList();         // crowns + menus
+    watchMyModDoc(user.uid, user.email);  // reload-on-flip
+
     paintHeaderCrown();
 
     // Username onboarding if not reserved
@@ -517,12 +553,12 @@
     // my ban/mute banner
     onSnapshot(banDoc(user.uid),(snap)=>showBanState(snap.data()||null));
 
-    // Determine role *after* mods loaded once (first paint still fine)
-    const iamModNow = isMod(user.uid, user.email);
-    if (iamModNow) {
+    // if mod, show side & attach mod-only listeners
+    const becomeModNow = isMod(user.uid, user.email);
+    if (becomeModNow) {
       sideCol.style.display='block';
       modPanel.style.display='block';
-      chatCol.style.flex='2'; // restore two-column layout
+      chatCol.style.flex='2';
 
       onSnapshot(bansColl,(snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
       onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), (snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderFlagList(docs); });
@@ -532,14 +568,13 @@
         renderModList(bDocs); renderFlagList(fDocs);
       };
     } else {
-      // non-mods: keep side hidden, no listeners to mod-only collections
       modPanel.style.display='none';
       sideCol.style.display='none';
       chatCol.style.flex='1 1 100%';
       modSearch.oninput = null;
     }
 
-    // realtime messages (hide slurs from feed if they slip through)
+    // realtime messages (hide slurs if they slip through)
     const qy=query(msgsRef, orderBy('ts','asc'), limit(500));
     rtState.textContent='listening';
     onSnapshot(qy,(snap)=>{
@@ -547,9 +582,7 @@
       snap.forEach(d=>{
         const data=d.data();
         if (containsSlur(data.text||'') || containsSlur(data.name||'')) {
-          // Mods purge automatically from their client if seen
           if (isMod(user.uid, user.email)) deleteDoc(doc(db,'rooms',ROOM_ID,'messages',d.id)).catch(()=>{});
-          // Flag once (best-effort)
           addDoc(flagsColl, { uid: data.uid, name: data.name||'', email:'', text: data.text||'', reason:'slur (autoscan)', msgId:d.id, at: serverTimestamp() }).catch(()=>{});
           return;
         }
@@ -558,7 +591,7 @@
       scrollToBottom();
     });
 
-    // send handler with client-side automod (block + flag + escalate)
+    // send handler + client-side automod
     form.onsubmit = async (e)=>{
       e.preventDefault();
       const text=input.value.trim();
