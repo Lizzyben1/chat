@@ -1,54 +1,65 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Global Chat (Accounts + Google + Anti-Spam)</title>
-  <style>
-    :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    .wrap{max-width:980px;margin:24px auto;padding:0 16px}
-    header{display:flex;gap:12px;align-items:center;margin:12px 0}
-    h1{margin:0;font-size:22px}
-    .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
-    .row{display:flex;gap:16px;flex-wrap:wrap}
-    .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Global Chat (Mods + Bans)</title>
+<style>
+  :root{ --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#e6eef6;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:980px;margin:24px auto;padding:0 16px}
+  header{display:flex;gap:12px;align-items:center;margin:12px 0}
+  h1{margin:0;font-size:22px}
+  .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{flex:1;min-width:280px;background:#0f1620;border:1px solid var(--border);border-radius:16px;padding:12px}
 
-    /* Chat area */
-    #messages{height:56vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px}
-    .msg{display:flex}
-    .bubble{
-      background:#0e141c;border:1px solid var(--border);border-radius:14px;
-      padding:10px 12px;max-width:80%;
-      word-break: break-word; overflow-wrap:anywhere;
-    }
-    .bubble *{max-width:100%}
-    .me .bubble{background:#0b2036}
-    .name{font-weight:600}
-    .text{white-space:pre-wrap}
-    .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
+  /* Chat area */
+  #messages{height:56vh;overflow:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px}
+  .msg{display:flex; position:relative}
+  .bubble{
+    background:#0e141c;border:1px solid var(--border);border-radius:14px;
+    padding:10px 12px;max-width:80%; word-break:break-word; overflow-wrap:anywhere;
+  }
+  .bubble *{max-width:100%}
+  .me .bubble{background:#0b2036}
+  .name{font-weight:600}
+  .text{white-space:pre-wrap}
+  .ts{color:#8aa0b3;font-size:12px;margin-top:4px}
+  .menu-btn{
+    position:absolute; top:6px; right:-8px; background:#0f1a25; border:1px solid var(--border);
+    border-radius:8px; padding:2px 6px; cursor:pointer; font-size:12px;
+  }
+  .menu{position:absolute; top:24px; right:-8px; background:#0e141c; border:1px solid var(--border); border-radius:10px; padding:6px; display:none; z-index:5; min-width:180px}
+  .menu button{width:100%; text-align:left; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f1a25; color:#e6eef6; cursor:pointer; margin:3px 0}
+  .menu button.danger{border-color:#3b1f24; background:#2a1216; color:#ffb3b3}
 
-    /* Input row */
-    .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
-    .input-wrap{flex:1;display:flex}
-    textarea{
-      flex:1; min-height:46px; max-height:160px; resize:vertical;
-      padding:12px; border-radius:12px; border:1px solid var(--border);
-      background:#0e141c; color:#e6eef6; width:100%;
-    }
-    button{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer}
-    button[disabled]{opacity:.6;cursor:not-allowed}
-    .below-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-    .tiny{font-size:12px;color:#8aa0b3}
-    .right{display:flex;gap:8px;margin-left:auto}
+  /* Input row */
+  .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
+  .input-wrap{flex:1;display:flex}
+  textarea{
+    flex:1; min-height:46px; max-height:160px; resize:vertical;
+    padding:12px; border-radius:12px; border:1px solid var(--border);
+    background:#0e141c; color:#e6eef6; width:100%;
+  }
+  button{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:#0f1a25;color:#e6eef6;cursor:pointer}
+  button[disabled]{opacity:.6;cursor:not-allowed}
+  .below-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .tiny{font-size:12px;color:#8aa0b3}
+  .right{display:flex;gap:8px;margin-left:auto}
 
-    /* Auth card */
-    .auth form{display:grid;grid-template-columns:1fr;gap:8px}
-    .tabs{display:flex;gap:8px;margin-bottom:8px}
-    .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
-    .tab.active{background:#162536}
-  </style>
+  /* Auth card */
+  .auth form{display:grid;grid-template-columns:1fr;gap:8px}
+  .tabs{display:flex;gap:8px;margin-bottom:8px}
+  .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
+  .tab.active{background:#162536}
+
+  /* Collapsed (blocked) message */
+  .collapsed{opacity:.75}
+  .collapsed .text{display:none}
+  .show-btn{margin-top:6px; font-size:12px; padding:4px 8px}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -77,6 +88,7 @@
         <div class="tiny" id="counter">0 / 500</div>
         <div class="tiny" id="throttleMsg"></div>
       </div>
+      <div class="tiny" id="banNotice" style="margin-top:6px;color:#ffb3b3"></div>
     </div>
 
     <!-- Auth -->
@@ -105,7 +117,7 @@
         </form>
       </div>
 
-      <!-- Username onboarding (shown after Google if none set/claimed) -->
+      <!-- Username onboarding after Google if needed -->
       <div id="username-onboard" style="display:none;margin-top:8px">
         <form id="unameForm">
           <input id="uname-input" placeholder="Pick a username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
@@ -128,10 +140,10 @@
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
-    serverTimestamp, query, orderBy, limit, onSnapshot
+    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // --- Your Firebase config ---
+  /* ====== Firebase config (yours) ====== */
   const firebaseConfig = {
     apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
     authDomain: "poopy-games-chat.firebaseapp.com",
@@ -146,13 +158,14 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // DOM
+  /* ====== DOM ====== */
   const messagesEl = document.getElementById('messages');
   const form = document.getElementById('form');
   const input = document.getElementById('input');
   const sendBtn = document.getElementById('sendBtn');
   const counter = document.getElementById('counter');
   const throttleMsg = document.getElementById('throttleMsg');
+  const banNotice = document.getElementById('banNotice');
   const authState = document.getElementById('auth-state');
   const rtState   = document.getElementById('rt-state');
   const whoami    = document.getElementById('whoami');
@@ -163,7 +176,7 @@
   const unameForm = document.getElementById('unameForm');
   const unameInput= document.getElementById('uname-input');
 
-  // Tabs
+  /* ====== Tabs ====== */
   const tabSignin = document.getElementById('tab-signin');
   const tabSignup = document.getElementById('tab-signup');
   const signinPane= document.getElementById('signin-pane');
@@ -171,9 +184,13 @@
   tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; authMsg.textContent=''; };
   tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; authMsg.textContent=''; };
 
-  // Room
+  /* ====== Room & helpers ====== */
   const ROOM_ID = 'global';
   const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
+  const bansRef = (uid) => doc(db, 'rooms', ROOM_ID, 'bans', uid);
+
+  const MOD_EMAIL = 'fressolaben@gmail.com';
+  const MAX_LEN = 500;
 
   async function ensureRoom(){
     const roomRef = doc(db, 'rooms', ROOM_ID);
@@ -181,41 +198,110 @@
     if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
 
-  // Char limit UI (client-side guard to 500)
-  const MAX_LEN = 500;
+  const storageKey = 'blocked_uids';
+  function getBlocked(){ try{ return new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); }catch{ return new Set(); } }
+  function setBlocked(set){ localStorage.setItem(storageKey, JSON.stringify(Array.from(set))); }
+  let blocked = getBlocked();
+
+  /* ====== Counter & Enter-to-send ====== */
   function updateCounter(){
     const len = input.value.length;
     counter.textContent = `${len} / ${MAX_LEN}`;
-    sendBtn.disabled = (len === 0 || len > MAX_LEN || !auth.currentUser || isRateLimited());
+    sendBtn.disabled = (len === 0 || len > MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan);
   }
   input.addEventListener('input', () => {
     updateCounter();
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 160) + 'px';
   });
-  // Enter=send, Shift+Enter=newline
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      form.requestSubmit();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
   updateCounter();
 
-  function fmtTime(ts){
-    try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; }
+  /* ====== Time utils ====== */
+  const mins = m => m*60*1000, hours = h => h*3600*1000, days = d => d*24*3600*1000;
+  function fmtTime(ts){ try { return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
+
+  /* ====== Render ====== */
+  function makeMenu(msgDocId, m){
+    const wrap = document.createElement('div');
+    wrap.className = 'menu';
+    const me = auth.currentUser?.uid === m.uid;
+    const isMod = auth.currentUser?.email === MOD_EMAIL;
+
+    function add(label, fn, danger=false){
+      const b = document.createElement('button');
+      b.textContent = label; if (danger) b.classList.add('danger');
+      b.onclick = async (e)=>{ e.stopPropagation(); wrap.style.display='none'; await fn(); };
+      wrap.appendChild(b);
+    }
+
+    // Delete (owner or mod)
+    if (me || isMod) add('Delete message', async ()=> {
+      await deleteDoc(doc(db, 'rooms', ROOM_ID, 'messages', msgDocId));
+    }, true);
+
+    // Block/unblock (local)
+    const isBlocked = blocked.has(m.uid);
+    add(isBlocked ? 'Unblock user (local)' : 'Block user (local)', async ()=>{
+      if (blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid);
+      setBlocked(blocked);
+      // re-render by toggling visibility
+      document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>{
+        el.classList.toggle('collapsed', blocked.has(m.uid));
+      });
+    });
+
+    // Mod actions
+    if (isMod && m.uid){
+      add('Mute 10 min', ()=> setMute(m.uid, mins(10)), true);
+      add('Mute 1 hour', ()=> setMute(m.uid, hours(1)), true);
+      add('Mute 24 hours', ()=> setMute(m.uid, hours(24)), true);
+      add('Ban 1 day', ()=> setBan(m.uid, days(1)), true);
+      add('Ban 7 days', ()=> setBan(m.uid, days(7)), true);
+      add('Perma ban', ()=> setPerma(m.uid), true);
+      add('Unmute', ()=> setMute(m.uid, 0));
+      add('Unban', ()=> setBan(m.uid, 0));
+    }
+    return wrap;
   }
-  function renderMessage(m, meUid){
+
+  function renderMessage(docSnap, meUid){
+    const m = docSnap.data();
     const row = document.createElement('div'); row.className = 'msg' + (m.uid===meUid ? ' me' : '');
+    row.dataset.uid = m.uid || '';
     const b = document.createElement('div'); b.className='bubble';
     const name = document.createElement('div'); name.className='name'; name.textContent = m.name || 'Anon';
     const text = document.createElement('div'); text.className='text'; text.textContent = m.text || '';
     const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
-    b.append(name, text, ts); row.appendChild(b); messagesEl.appendChild(row);
+
+    const menuBtn = document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
+    const menu = makeMenu(docSnap.id, m);
+    menuBtn.onclick = (e)=>{ e.stopPropagation(); menu.style.display = (menu.style.display==='block'?'none':'block'); };
+    document.addEventListener('click', ()=> menu.style.display='none');
+
+    b.append(name, text, ts);
+    row.appendChild(b);
+    row.appendChild(menuBtn);
+    row.appendChild(menu);
+    if (blocked.has(m.uid)) row.classList.add('collapsed');
+
+    // Collapsed reveal button
+    if (blocked.has(m.uid)){
+      const show = document.createElement('button');
+      show.className='show-btn';
+      show.textContent='Show message';
+      show.onclick = (e)=>{ e.stopPropagation(); row.classList.remove('collapsed'); show.remove(); };
+      b.appendChild(show);
+    }
+
+    messagesEl.appendChild(row);
   }
+
   function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-  // Unique username claim
+  /* ====== Username registry ====== */
   async function claimUsernameTx(username, uid){
     const uname = username.toLowerCase();
     const unameRef = doc(db, 'usernames', uname);
@@ -226,29 +312,15 @@
     });
   }
 
-  // --- Google sign-in (popup + redirect fallback) ---
+  /* ====== Google sign-in ====== */
   const provider = new GoogleAuthProvider();
   googleBtn.onclick = async () => {
-    try {
-      if (auth.currentUser) {
-        await linkWithPopup(auth.currentUser, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
-      authMsg.textContent = '';
-      updateCounter();
-    } catch (err) {
-      try {
-        authMsg.textContent = (err.code || '') + ' — trying redirect…';
-        await signInWithRedirect(auth, provider);
-      } catch (err2) {
-        authMsg.textContent = err2.message || String(err2);
-      }
-    }
+    try { if (auth.currentUser) await linkWithPopup(auth.currentUser, provider); else await signInWithPopup(auth, provider); authMsg.textContent=''; updateCounter(); }
+    catch (err) { try { authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth, provider); } catch (err2) { authMsg.textContent=err2.message||String(err2); } }
   };
   getRedirectResult(auth).catch(err => { if (err) authMsg.textContent = err.message || String(err); });
 
-  // Sign up (email/password + unique username)
+  /* ====== Email/Password auth ====== */
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     authMsg.textContent = 'Creating account…';
@@ -258,27 +330,24 @@
     if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const uid = cred.user.uid;
-      await claimUsernameTx(username, uid);
+      await claimUsernameTx(username, cred.user.uid);
       await updateProfile(cred.user, { displayName: username });
-      await setDoc(doc(db, 'users', uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
-      authMsg.textContent = 'Account created. You are signed in.';
-      updateCounter();
+      await setDoc(doc(db, 'users', cred.user.uid), { username, email, createdAt: serverTimestamp() }, { merge: true });
+      authMsg.textContent = 'Account created. You are signed in.'; updateCounter();
     } catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
-  // Sign in (email/password)
   document.getElementById('signinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     authMsg.textContent = 'Signing in…';
     const email = document.getElementById('si-email').value.trim();
     const pass  = document.getElementById('si-pass').value;
-    try { await signInWithEmailAndPassword(auth, email, pass); authMsg.textContent = 'Signed in.'; updateCounter(); }
+    try { await signInWithEmailAndPassword(auth, email, pass); authMsg.textContent='Signed in.'; updateCounter(); }
     catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
-  // Username onboarding (post-login, if missing/unclaimed)
-  document.getElementById('unameForm').addEventListener('submit', async (e) => {
+  // Username onboarding after Google if needed
+  unameForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = (unameInput.value || '').trim().toLowerCase();
     if (!/^[a-z0-9_]{3,20}$/.test(username)) { authMsg.textContent = 'Use 3–20 chars: a–z, 0–9, _'; return; }
@@ -286,46 +355,58 @@
       await claimUsernameTx(username, auth.currentUser.uid);
       await updateProfile(auth.currentUser, { displayName: username });
       await setDoc(doc(db, 'users', auth.currentUser.uid), { username, lastUpdated: serverTimestamp() }, { merge: true });
-      unamePane.style.display = 'none';
-      authMsg.textContent = 'Username saved!';
+      unamePane.style.display='none';
+      authMsg.textContent='Username saved!';
     } catch (err) { authMsg.textContent = err.message || String(err); }
   });
 
-  // --- Anti-spam/throttling ---
-  const sendTimes = [];              // timestamps (ms) of recent sends
-  let cooldownUntil = 0;             // epoch ms when cooldown ends
-  let lastSentAt = 0;                // last send time for 1/sec rule during cooldown
+  // Listen to your own ban/mute to reflect UI state
+  let sendingDisabledByBan = false;
+  function showBanState(b){
+    sendingDisabledByBan = false;
+    banNotice.textContent = '';
+    const now = Date.now();
+    if (!b) return;
+    const perma = !!b.perma;
+    const muteUntil = b.muteUntil?.toMillis?.() ?? 0;
+    const banUntil  = b.banUntil?.toMillis?.() ?? 0;
 
+    if (perma || banUntil > now){
+      sendingDisabledByBan = true;
+      banNotice.textContent = perma ? 'You are permanently banned from sending.' : `Banned until ${new Date(banUntil).toLocaleString()}`;
+    } else if (muteUntil > now){
+      sendingDisabledByBan = true;
+      banNotice.textContent = `Muted until ${new Date(muteUntil).toLocaleString()}`;
+    }
+  }
+
+  /* ====== Anti-spam/throttling ====== */
+  const sendTimes = []; let cooldownUntil = 0; let lastSentAt = 0;
   function isRateLimited(){
     const now = Date.now();
-
-    // Purge >2s old timestamps
     while (sendTimes.length && now - sendTimes[0] > 2000) sendTimes.shift();
-
-    // If we already hit cooldown, enforce 1/sec until it expires
     if (now < cooldownUntil) {
       const remaining = Math.ceil((cooldownUntil - now)/1000);
       throttleMsg.textContent = `Slow mode: 1 msg/sec for ${remaining}s`;
-      // Enforce 1/sec
       if (now - lastSentAt < 1000) return true;
       return false;
-    } else {
-      throttleMsg.textContent = '';
-    }
-
-    // If more than 5 msgs in the last 2s, enter cooldown for 10s
-    if (sendTimes.length > 5) {
-      cooldownUntil = now + 10000;  // 10s
-      throttleMsg.textContent = `Slow mode: 1 msg/sec for 10s`;
-    }
+    } else throttleMsg.textContent = '';
+    if (sendTimes.length > 5) { cooldownUntil = now + 10000; throttleMsg.textContent = 'Slow mode: 1 msg/sec for 10s'; }
     return false;
   }
+  function noteSent(){ const now = Date.now(); sendTimes.push(now); lastSentAt = now; updateCounter(); }
 
-  function noteSent(){
-    const now = Date.now();
-    sendTimes.push(now);
-    lastSentAt = now;
-    updateCounter();
+  // Mod actions: mute/ban
+  async function setMute(uid, durationMs){
+    const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
+    await setDoc(bansRef(uid), { muteUntil: until, by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
+  }
+  async function setBan(uid, durationMs){
+    const until = durationMs>0 ? new Date(Date.now()+durationMs) : new Date(0);
+    await setDoc(bansRef(uid), { banUntil: until, perma:false, by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
+  }
+  async function setPerma(uid){
+    await setDoc(bansRef(uid), { perma:true, banUntil: new Date(86400000), by: auth.currentUser.email, at: serverTimestamp() }, { merge:true });
   }
 
   // Sign out
@@ -348,7 +429,7 @@
 
     await ensureRoom();
 
-    // If no reserved username, prompt onboarding
+    // Username onboarding if not claimed
     let showOnboard = true;
     if (user.displayName) {
       const claimed = await getDoc(doc(db, 'usernames', user.displayName.toLowerCase()));
@@ -356,11 +437,14 @@
     }
     unamePane.style.display = showOnboard ? 'block' : 'none';
 
+    // Watch your own ban/mute doc for UI state
+    onSnapshot(bansRef(user.uid), (snap)=> showBanState(snap.data()||null));
+
     const q = query(msgsRef, orderBy('ts','asc'), limit(200));
     rtState.textContent = 'listening';
     onSnapshot(q, (snap) => {
       messagesEl.innerHTML = '';
-      snap.forEach(d => renderMessage(d.data(), user.uid));
+      snap.forEach(d => renderMessage(d, user.uid));
       scrollToBottom();
     });
 
@@ -368,9 +452,7 @@
       e.preventDefault();
       const text = input.value.trim();
       if (!text || text.length > MAX_LEN) return;
-
-      // rate limiting
-      if (isRateLimited()) { updateCounter(); return; }
+      if (sendingDisabledByBan || isRateLimited()) { updateCounter(); return; }
 
       await addDoc(msgsRef, {
         uid: user.uid,
@@ -383,9 +465,6 @@
       scrollToBottom();
     };
   });
-
-  // Keep counter state fresh
-  setInterval(updateCounter, 300);
 </script>
 </body>
 </html>
