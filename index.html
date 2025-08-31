@@ -3,877 +3,726 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Global Chat — Chat + DMs + Friends + Settings</title>
+<title>Global Chat (Mods + Settings + Galaxy Theme)</title>
 <style>
   :root{
-    --bg-dark:#0b0f14; --card-dark:#121922; --muted:#8aa0b3; --border:#1e2a36;
-    --accent:#4da3ff; --gold:#f5c542; --danger:#ff6b6b;
-    --bg-light:#f6f8fb; --card-light:#ffffff; --text-light:#0b1620;
+    --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; --gold:#f5c542;
+    --bubble:#0e141c; --bubble-me:#0b2036; --text:#e6eef6;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:1200px;margin:20px auto;padding:0 16px}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 16px}
   header{display:flex;gap:12px;align-items:center;margin:12px 0}
   h1{margin:0;font-size:22px}
-  .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:var(--card)}
-  .tabs{display:flex;gap:8px;margin-left:12px}
-  .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
-  .tab.active{background:rgba(255,255,255,0.05)}
+  .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:#0f1620}
   .row{display:flex;gap:16px;flex-wrap:wrap}
-  .card{flex:1;min-width:280px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
+  .card{flex:1;min-width:280px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
 
-  /* chat area */
+  /* Chat */
   #messages{height:56vh;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;padding-right:6px;overflow-y:auto;overflow-x:hidden}
   .msg{display:flex;position:relative}
-  .bubble{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px 10px;max-width:80%;word-break:break-word;overflow-wrap:anywhere}
-  .me .bubble{background:linear-gradient(180deg, rgba(11,32,54,1), rgba(10,30,50,1))}
-  .name{font-weight:700;display:flex;align-items:center;gap:8px}
-  .crown{color:var(--gold)}
+  .bubble{background:var(--bubble);border:1px solid var(--border);border-radius:14px;padding:10px 12px;max-width:80%;word-break:break-word;overflow-wrap:anywhere}
+  .me .bubble{background:var(--bubble-me)}
+  .name{font-weight:600;display:flex;align-items:center;gap:6px}
+  .crown{color:var(--gold);font-size:14px}
   .text{white-space:pre-wrap}
-  .ts{color:var(--muted);font-size:12px;margin-top:6px}
-  .menu-btn{position:absolute;top:6px;right:6px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
-  .menu{position:absolute;top:28px;right:6px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:220px}
-  .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;cursor:pointer;margin:4px 0}
-  .menu button.danger{color:var(--danger)}
+  .ts{color:var(--muted);font-size:12px;margin-top:4px}
+  .menu-btn{position:absolute;top:6px;right:6px;background:#0f1a25;border:1px solid var(--border);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
+  .menu{position:absolute;top:28px;right:6px;background:#0e141c;border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:210px}
+  .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f1a25;color:var(--text);cursor:pointer;margin:4px 0}
+  .menu button.danger{border-color:#3b1f24;background:#2a1216;color:#ffb3b3}
 
+  /* Grouping */
   .grouped .name{display:none}
-  .grouped .bubble{margin-top:-6px}
+  .grouped .bubble{margin-top:-4px}
   .group-start .bubble{margin-top:0}
 
-  /* input */
-  .row-input{display:flex;gap:10px;margin-top:10px;align-items:stretch}
-  textarea{flex:1;min-height:46px;max-height:160px;resize:vertical;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit}
-  button{padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;cursor:pointer}
-  button[disabled]{opacity:.5;cursor:not-allowed}
-  .below{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  /* Input row */
+  .chat-form{display:flex;gap:10px;margin-top:10px;align-items:stretch}
+  .input-wrap{flex:1;display:flex}
+  textarea{flex:1;min-height:46px;max-height:160px;resize:vertical;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0e141c;color:var(--text);width:100%}
+  button{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:#0f1a25;color:var(--text);cursor:pointer}
+  button[disabled]{opacity:.6;cursor:not-allowed}
+  .below-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
   .tiny{font-size:12px;color:var(--muted)}
-  .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .right{display:flex;gap:8px;margin-left:auto}
 
-  /* lists */
-  .item{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .badge{background:var(--accent);padding:4px 8px;border-radius:999px;color:#fff;font-size:12px}
+  /* Auth & Mods */
+  .auth form{display:grid;grid-template-columns:1fr;gap:8px}
+  .tabs{display:flex;gap:8px;margin-bottom:8px}
+  .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer}
+  .tab.active{background:#162536}
+  .collapsed{opacity:.75}
+  .collapsed .text{display:none}
+  .show-btn{margin-top:6px;font-size:12px;padding:4px 8px}
 
-  /* dm area */
-  #dmList{max-height:28vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
-  #dmThread{max-height:44vh;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+  .mod-panel{display:none;margin-top:12px}
+  .mod-panel h3{margin:8px 0 6px 0;font-size:16px}
+  .mod-search{display:flex;gap:8px}
+  .mod-search input{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0e141c;color:var(--text)}
+  .section{margin-top:14px;padding-top:8px;border-top:1px dashed var(--border)}
+  .ban-item,.flag-item{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;background:#0f1620}
+  .ban-item .meta,.flag-item .meta{flex:1;min-width:0}
+  .who{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+  .why{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-  /* settings */
-  .setting{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid var(--border);margin-top:8px}
+  /* Settings modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal .panel{width:min(680px,92vw);max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .panel h2{margin:0 0 8px 0;font-size:18px}
+  .panel label{font-size:14px;color:var(--muted)}
+  .panel textarea{min-height:120px}
 
-  /* theme vars default -> dark */
-  :root { --bg:var(--bg-dark); --card:var(--card-dark); --text:#e6eef6; }
-  body.light { --bg:var(--bg-light); --card:var(--card-light); --text:var(--text-light); --border:#e0e6ee; --muted:#6b7280; }
-  body{background:var(--bg)}
+  /* Galaxy theme (body.galaxy) */
+  @keyframes galaxyShift {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+  }
+  body.galaxy{
+    --bg:#05060a;
+    --card:#0a0f17;
+    --border:#1b2431;
+    --bubble:#0b1120;
+    --bubble-me:#0a1630;
+    --accent:#7aa2ff;
+    background: linear-gradient(120deg,#0b0f1a,#0a1330,#1b1f3b,#0a1330,#0b0f1a);
+    background-size: 300% 300%;
+    animation: galaxyShift 18s ease infinite;
+  }
+  body.galaxy .bubble{
+    position:relative;
+    border:1px solid rgba(125,170,255,.28);
+    box-shadow: 0 0 0 1px rgba(125,170,255,.06), 0 0 18px rgba(125,170,255,.08) inset;
+  }
+  body.galaxy .bubble::before{
+    content:"";
+    position:absolute; inset:-1px;
+    pointer-events:none; border-radius:14px;
+    background: linear-gradient(135deg, rgba(109,180,255,.18), rgba(255,96,207,.12), rgba(109,180,255,.18));
+    mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    padding:1px; box-shadow:0 0 24px rgba(109,180,255,.14);
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Global Chat</h1>
-    <div class="tabs" id="mainTabs">
-      <div class="tab active" data-tab="chat">Chat</div>
-      <div class="tab" data-tab="dms">Direct Messages <span id="dmBadge" style="margin-left:6px"></span></div>
-      <div class="tab" data-tab="friends">Friends</div>
-      <div class="tab" data-tab="settings">Settings</div>
-    </div>
+    <span class="pill">auth: <span id="auth-state">loading…</span></span>
+    <span class="pill">rt: <span id="rt-state">idle</span></span>
     <div class="right">
-      <span class="pill">auth: <span id="auth-state">loading…</span></span>
-      <span class="pill">rt: <span id="rt-state">idle</span></span>
-      <span id="whoami" class="pill" style="display:none;margin-left:8px"></span>
-      <button id="signoutBtn" style="display:none;margin-left:6px">Sign out</button>
+      <button id="settingsBtn">Settings</button>
+      <span id="whoami" class="pill" style="display:none"></span>
+      <button id="signoutBtn" style="display:none">Sign out</button>
     </div>
   </header>
 
   <div class="row">
-    <!-- Main chat column -->
+    <!-- Chat -->
     <div id="chatCol" class="card" style="flex:2">
-      <!-- Chat view -->
-      <div id="view-chat">
-        <div id="messages"></div>
-
-        <form id="form" class="row-input">
-          <textarea id="input" placeholder="Write a message…" maxlength="500"></textarea>
-          <button id="sendBtn" type="submit" disabled>Send</button>
-        </form>
-
-        <div class="below">
-          <div class="tiny" id="counter">0 / 500</div>
-          <div class="tiny right"><div id="throttleMsg"></div></div>
-        </div>
-        <div class="tiny" id="banNotice" style="margin-top:8px;color:var(--danger)"></div>
+      <div id="messages"></div>
+      <form id="form" class="chat-form">
+        <div class="input-wrap"><textarea id="input" placeholder="Write a message…" maxlength="500"></textarea></div>
+        <button id="sendBtn" type="submit" disabled>Send</button>
+      </form>
+      <div class="below-row">
+        <div class="tiny" id="counter">0 / 500</div>
+        <div class="tiny" id="throttleMsg"></div>
       </div>
-
-      <!-- DM view -->
-      <div id="view-dms" style="display:none">
-        <div style="display:flex;gap:10px">
-          <div style="flex:1">
-            <div style="font-weight:700;margin-bottom:6px">Conversations</div>
-            <div id="dmList"></div>
-          </div>
-          <div style="flex:2;display:flex;flex-direction:column">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:700" id="dmHeader">Select conversation</div>
-            </div>
-            <div id="dmThread" class="card" style="flex:1;margin-top:8px;min-height:220px"></div>
-
-            <form id="dmForm" class="row-input" style="margin-top:8px;display:none">
-              <textarea id="dmInput" placeholder="Write a private message…" maxlength="1000"></textarea>
-              <button id="dmSend" type="submit">Send DM</button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Friends view -->
-      <div id="view-friends" style="display:none">
-        <div style="display:flex;gap:12px">
-          <div style="flex:1">
-            <div style="font-weight:700">Friends</div>
-            <div id="friendsList" style="margin-top:8px"></div>
-          </div>
-
-          <div style="flex:1">
-            <div style="display:flex;gap:8px">
-              <div class="tab active" id="ftab-friends">Friends</div>
-              <div class="tab" id="ftab-requests">Requests</div>
-              <div class="tab" id="ftab-sent">Sent</div>
-            </div>
-            <div id="friendsTabContent" style="margin-top:8px"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Settings view -->
-      <div id="view-settings" style="display:none">
-        <div style="font-weight:700">Settings</div>
-        <div class="setting">
-          <div>Theme</div><div><button id="themeToggle">Toggle theme</button></div>
-        </div>
-        <div class="setting">
-          <div>Allow DMs from non-friends</div><div><input type="checkbox" id="allowDMToggle"></div>
-        </div>
-        <div class="setting">
-          <div>Censor swears/slurs (client only)</div><div><input type="checkbox" id="censorToggle"></div>
-        </div>
-        <div class="setting">
-          <div>Show DMs unread badge</div><div><input type="checkbox" id="dmBadgeToggle" checked></div>
-        </div>
-        <div style="margin-top:12px">
-          <div style="font-weight:700">Blocked users (local)</div>
-          <div id="blockedList" style="margin-top:8px"></div>
-        </div>
-      </div>
+      <div class="tiny" id="banNotice" style="margin-top:6px;color:#ffb3b3"></div>
     </div>
 
-    <!-- Side column (auth/mod/tools) -->
-    <div id="sideCol" class="card" style="flex:1">
+    <!-- Right column -->
+    <div id="sideCol" class="card auth" style="flex:1">
       <div id="authArea">
         <button id="googleBtn" style="width:100%;margin-bottom:10px">Continue with Google</button>
-        <div style="display:flex;gap:8px">
-          <div class="tab active" id="signinTab">Sign in</div>
-          <div class="tab" id="signupTab">Sign up</div>
+
+        <div class="tabs">
+          <div id="tab-signin" class="tab active">Sign in</div>
+          <div id="tab-signup" class="tab">Sign up</div>
         </div>
 
-        <div id="signinPane" style="margin-top:8px">
+        <div id="signin-pane">
           <form id="signinForm">
-            <input id="si-email" type="email" placeholder="Email" required style="width:100%;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <input id="si-pass" type="password" placeholder="Password" required style="width:100%;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <button style="width:100%">Sign in</button>
+            <input id="si-email" type="email" placeholder="Email" required>
+            <input id="si-pass" type="password" placeholder="Password" required>
+            <button>Sign in</button>
           </form>
         </div>
 
-        <div id="signupPane" style="margin-top:8px;display:none">
+        <div id="signup-pane" style="display:none">
           <form id="signupForm">
-            <input id="su-username" placeholder="Username (a–z, 0–9, _)" minlength="3" maxlength="20" required style="width:100%;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <input id="su-email" type="email" placeholder="Email" required style="width:100%;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <input id="su-pass" type="password" placeholder="Password (min 6 chars)" minlength="6" required style="width:100%;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <button style="width:100%">Create account</button>
+            <input id="su-username" placeholder="Username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+            <input id="su-email" type="email" placeholder="Email" required>
+            <input id="su-pass" type="password" placeholder="Password (min 6 chars)" minlength="6" required>
+            <button>Create account</button>
           </form>
         </div>
 
-        <div id="usernameOnboard" style="display:none;margin-top:8px">
+        <div id="username-onboard" style="display:none;margin-top:8px">
           <form id="unameForm">
-            <input id="uname-input" placeholder="Pick a username" minlength="3" maxlength="20" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:inherit">
-            <button style="width:100%;margin-top:6px">Save username</button>
+            <input id="uname-input" placeholder="Pick a username (a–z, 0–9, _)" minlength="3" maxlength="20" required>
+            <button>Save username</button>
           </form>
+          <div class="tiny">This sets your chat name and reserves it.</div>
         </div>
-        <div id="authMsg" style="margin-top:8px;color:var(--muted)"></div>
+
+        <div id="auth-msg" style="color:var(--muted);margin-top:6px;min-height:1.2em"></div>
       </div>
 
-      <div id="modPanel" style="display:none;margin-top:12px">
-        <div style="font-weight:700">Moderation</div>
-        <div style="margin-top:8px">
-          <div style="font-weight:600">Muted/Banned</div>
-          <div id="modBans" style="margin-top:6px"></div>
+      <div id="modPanel" class="mod-panel">
+        <div class="mod-search"><input id="modSearch" placeholder="Search…"></div>
+
+        <div class="section">
+          <h3>Muted/Banned users</h3>
+          <div id="modList"></div>
         </div>
-        <div style="margin-top:12px">
-          <div style="font-weight:600">Flagged</div>
-          <div id="modFlags" style="margin-top:6px"></div>
+
+        <div class="section">
+          <h3>Flagged messages</h3>
+          <div id="flagList"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal" aria-hidden="true">
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+      <h2>Settings</h2>
+      <button id="closeSettings">Close</button>
+    </div>
+    <div class="grid">
+      <div>
+        <label>Theme</label>
+        <select id="themeSelect" style="width:100%;margin-top:6px">
+          <option value="default">Default</option>
+          <option value="galaxy">Galaxy (chroma glow)</option>
+        </select>
+        <label style="display:block;margin-top:12px">
+          <input type="checkbox" id="censorToggle"> Enable swear censor (client-side)
+        </label>
+        <div class="tiny">When enabled, <em>your view</em> censors common swears in message text. It doesn’t flag/ban anyone.</div>
+      </div>
+      <div>
+        <label>Custom CSS (optional)</label>
+        <textarea id="customCss" placeholder="/* Your CSS overrides here */"></textarea>
+        <button id="applyCss" style="margin-top:8px">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom CSS injection node -->
+<style id="customTheme"></style>
+
 <script type="module">
-/* ========= Firebase SDKs ========= */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {
-  getAuth, onAuthStateChanged, signOut,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
-  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, linkWithPopup
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import {
-  getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
-  serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signOut,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
+    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, linkWithPopup
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
+    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-/* ========= Config (your keys) ========= */
-const firebaseConfig = {
-  apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
-  authDomain: "poopy-games-chat.firebaseapp.com",
-  projectId: "poopy-games-chat",
-  storageBucket: "poopy-games-chat.firebasestorage.app",
-  messagingSenderId: "412556849195",
-  appId: "1:412556849195:web:643791cd55e173f9fbba6e",
-  measurementId: "G-ELSV57GKEP"
-};
+  // ---------- Firebase config ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
+    authDomain: "poopy-games-chat.firebaseapp.com",
+    projectId: "poopy-games-chat",
+    storageBucket: "poopy-games-chat.firebasestorage.app",
+    messagingSenderId: "412556849195",
+    appId: "1:412556849195:web:643791cd55e173f9fbba6e",
+    measurementId: "G-ELSV57GKEP"
+  };
 
-const SUPERADMIN_UID = "clkCiJePNvaWecDuoTEmqSMohim2";
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
 
-/* ========= Init ========= */
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  // ---------- DOM ----------
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+  const counter = document.getElementById('counter');
+  const throttleMsg = document.getElementById('throttleMsg');
+  const banNotice = document.getElementById('banNotice');
+  const authState = document.getElementById('auth-state');
+  const rtState   = document.getElementById('rt-state');
+  const whoami    = document.getElementById('whoami');
+  const signoutBtn= document.getElementById('signoutBtn');
+  const authMsg   = document.getElementById('auth-msg');
+  const googleBtn = document.getElementById('googleBtn');
+  const unamePane = document.getElementById('username-onboard');
+  const unameForm = document.getElementById('unameForm');
+  const unameInput= document.getElementById('uname-input');
+  const authArea  = document.getElementById('authArea');
+  const modPanel  = document.getElementById('modPanel');
+  const modSearch = document.getElementById('modSearch');
+  const modList   = document.getElementById('modList');
+  const flagList  = document.getElementById('flagList');
+  const tabSignin = document.getElementById('tab-signin');
+  const tabSignup = document.getElementById('tab-signup');
+  const signinPane= document.getElementById('signin-pane');
+  const signupPane= document.getElementById('signup-pane');
+  const sideCol   = document.getElementById('sideCol');
+  const chatCol   = document.getElementById('chatCol');
 
-/* ========= DOM refs ========= */
-const tabs = document.querySelectorAll('#mainTabs .tab');
-const dmBadgeEl = document.getElementById('dmBadge');
+  // Settings UI
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const closeSettings = document.getElementById('closeSettings');
+  const themeSelect = document.getElementById('themeSelect');
+  const censorToggle = document.getElementById('censorToggle');
+  const customCss = document.getElementById('customCss');
+  const applyCss = document.getElementById('applyCss');
+  const customThemeNode = document.getElementById('customTheme');
 
-const viewChat = document.getElementById('view-chat');
-const viewDMs = document.getElementById('view-dms');
-const viewFriends = document.getElementById('view-friends');
-const viewSettings = document.getElementById('view-settings');
+  tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
+  tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
 
-const messagesEl = document.getElementById('messages');
-const form = document.getElementById('form');
-const input = document.getElementById('input');
-const sendBtn = document.getElementById('sendBtn');
-const counterEl = document.getElementById('counter');
-const throttleMsg = document.getElementById('throttleMsg');
-const banNotice = document.getElementById('banNotice');
+  // ---------- Settings (local) ----------
+  const LS_THEME = 'chat_theme';
+  const LS_CSS   = 'chat_custom_css';
+  const LS_CENSOR= 'chat_censor_swears';
 
-const sideCol = document.getElementById('sideCol');
-const authArea = document.getElementById('authArea');
-const authState = document.getElementById('auth-state');
-const rtState = document.getElementById('rt-state');
-const whoami = document.getElementById('whoami');
-const signoutBtn = document.getElementById('signoutBtn');
+  function applyThemeClass(value){
+    document.body.classList.toggle('galaxy', value==='galaxy');
+  }
+  function loadSettings(){
+    const t = localStorage.getItem(LS_THEME) || 'default';
+    themeSelect.value = t; applyThemeClass(t);
+    const css = localStorage.getItem(LS_CSS) || '';
+    customCss.value = css; customThemeNode.textContent = css;
+    const censor = localStorage.getItem(LS_CENSOR) === '1';
+    censorToggle.checked = censor;
+  }
+  function openSettings(){ settingsModal.style.display='flex'; settingsModal.setAttribute('aria-hidden','false'); }
+  function closeSettingsModal(){ settingsModal.style.display='none'; settingsModal.setAttribute('aria-hidden','true'); }
+  settingsBtn.onclick = openSettings;
+  closeSettings.onclick = closeSettingsModal;
+  settingsModal.addEventListener('click', (e)=>{ if(e.target===settingsModal) closeSettingsModal(); });
+  themeSelect.onchange = ()=>{ localStorage.setItem(LS_THEME, themeSelect.value); applyThemeClass(themeSelect.value); };
+  applyCss.onclick = ()=>{ localStorage.setItem(LS_CSS, customCss.value); customThemeNode.textContent = customCss.value; };
+  censorToggle.onchange = ()=>{ localStorage.setItem(LS_CENSOR, censorToggle.checked ? '1':'0'); };
 
-const googleBtn = document.getElementById('googleBtn');
-const signinTab = document.getElementById('signinTab');
-const signupTab = document.getElementById('signupTab');
-const signinPane = document.getElementById('signinPane');
-const signupPane = document.getElementById('signupPane');
-const authMsg = document.getElementById('authMsg');
-const usernameOnboard = document.getElementById('usernameOnboard');
+  loadSettings();
 
-const dmListEl = document.getElementById('dmList');
-const dmThreadEl = document.getElementById('dmThread');
-const dmForm = document.getElementById('dmForm');
-const dmInput = document.getElementById('dmInput');
-const dmHeader = document.getElementById('dmHeader');
+  // ---------- Room / collections ----------
+  const ROOM_ID = 'global';
+  const OWNER_EMAIL = 'fressolaben@gmail.com';
+  const MAX_LEN = 500;
+  const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
-const friendsList = document.getElementById('friendsList');
-const friendsTabContent = document.getElementById('friendsTabContent');
-const ftabFriends = document.getElementById('ftab-friends');
-const ftabRequests = document.getElementById('ftab-requests');
-const ftabSent = document.getElementById('ftab-sent');
+  const msgsRef   = collection(db, 'rooms', ROOM_ID, 'messages');
+  const bansColl  = collection(db, 'rooms', ROOM_ID, 'bans');
+  const modsColl  = collection(db, 'rooms', ROOM_ID, 'mods');
+  const flagsColl = collection(db, 'rooms', ROOM_ID, 'flags');
 
-const modPanel = document.getElementById('modPanel');
-const modBans = document.getElementById('modBans');
-const modFlags = document.getElementById('modFlags');
+  const banDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'bans', uid);
+  const modDoc = (uid)=> doc(db, 'rooms', ROOM_ID, 'mods', uid);
 
-const allowDMToggle = document.getElementById('allowDMToggle');
-const censorToggle = document.getElementById('censorToggle');
-const themeToggle = document.getElementById('themeToggle');
-const dmBadgeToggle = document.getElementById('dmBadgeToggle');
-
-const blockedListEl = document.getElementById('blockedList');
-const unameForm = document.getElementById('unameForm');
-const unameInput = document.getElementById('uname-input');
-
-/* ========= constants & refs ========= */
-const ROOM_ID = 'global';
-const MAX_LEN = 500;
-const GROUP_WINDOW_MS = 5 * 60 * 1000;
-
-const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
-const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
-const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
-const flagsColl = collection(db, 'rooms', ROOM_ID, 'flags');
-
-let currentUser = null;
-let modUIDs = new Set();
-let lastUid = null, lastTsMs = 0;
-let sendingDisabledByBan = false;
-let sendTimes = [], cooldownUntil = 0, lastSentAt = 0;
-let blocked = ( () => { try { return new Set(JSON.parse(localStorage.getItem('blocked_uids')||'[]')); } catch { return new Set(); } })();
-let deviceId = ( () => { let id = localStorage.getItem('device_id'); if(!id){ id = crypto.randomUUID(); localStorage.setItem('device_id', id);} return id; })();
-
-let mySettings = { allowDMs: true, censor: false, theme: 'dark', showDmBadge: true };
-let currentDMConv = null; // { id, otherUid, otherName }
-
-/* ========= helpers ========= */
-function setTheme(theme){ if(theme === 'light'){ document.body.classList.add('light'); } else { document.body.classList.remove('light'); } }
-function updateCounter(){ const len = input.value.length; counterEl.textContent = `${len} / ${MAX_LEN}`; sendBtn.disabled = (len===0 || len>MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan); }
-function isRateLimited(){ const now=Date.now(); while(sendTimes.length && now-sendTimes[0] > 2000) sendTimes.shift(); if(now < cooldownUntil){ const rem = Math.ceil((cooldownUntil-now)/1000); throttleMsg.textContent = `Slow mode: 1 msg/sec for ${rem}s`; if(now - lastSentAt < 1000) return true; return false; } throttleMsg.textContent=''; if(sendTimes.length>5){ cooldownUntil = now + 10000; throttleMsg.textContent='Slow mode: 1 msg/sec for 10s'; } return false; }
-function noteSent(){ const n = Date.now(); sendTimes.push(n); lastSentAt = n; updateCounter(); }
-function fmtTime(ts){ try{ return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
-function convIdFrom(u1,u2){ return [u1,u2].sort().join('_'); }
-
-/* ========= AutoMod / slur handling (client) ========= */
-function normalizeText(s){
-  return s.toLowerCase()
-    .normalize('NFD').replace(/\p{Diacritic}/gu,'')
-    .replace(/[@]/g,'a').replace(/0/g,'o').replace(/[1l!]/g,'i').replace(/3/g,'e').replace(/4/g,'a').replace(/5/g,'s').replace(/7/g,'t')
-    .replace(/[^a-z0-9 ]+/g,' ')
-    .replace(/(\w)\1{2,}/g,'$1$1')
-    .replace(/\s+/g,' ').trim();
-}
-const SLURS = ['nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'];
-const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
-function containsSlur(s){ return SLUR_RE.test(normalizeText(s||'')); }
-function censorText(s){ return s.replace(SLUR_RE, (m)=>'*'.repeat(Math.max(1,m.length))); }
-
-/* ========= UI helpers ========= */
-function switchTab(tab){
-  document.querySelectorAll('#mainTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tab === tab));
-  viewChat.style.display = tab === 'chat' ? '' : 'none';
-  viewDMs.style.display = tab === 'dms' ? '' : 'none';
-  viewFriends.style.display = tab === 'friends' ? '' : 'none';
-  viewSettings.style.display = tab === 'settings' ? '' : 'none';
-  if(tab === 'dms') loadDMConversations();
-  if(tab === 'friends') loadFriendsPanel();
-}
-document.querySelectorAll('#mainTabs .tab').forEach(t=>t.addEventListener('click', ()=> switchTab(t.dataset.tab)));
-
-function renderBlockedList(){
-  blockedListEl.innerHTML = '';
-  if(blocked.size === 0) { blockedListEl.textContent = 'No locally blocked users'; return; }
-  Array.from(blocked).forEach(uid=>{
-    const el = document.createElement('div'); el.className='item';
-    el.textContent = uid;
-    const btn = document.createElement('button'); btn.textContent='Unblock (local)'; btn.onclick = ()=>{ blocked.delete(uid); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); renderBlockedList(); };
-    el.appendChild(btn);
-    blockedListEl.appendChild(el);
-  });
-}
-
-/* ========= Public chat: menu & rendering ========= */
-function makeUserMenu(docId, m){
-  const wrap = document.createElement('div'); wrap.className='menu';
-  const me = currentUser && currentUser.uid === m.uid;
-  const amMod = currentUser && (modUIDs.has(currentUser.uid) || currentUser.uid === SUPERADMIN_UID);
-
-  function add(label, fn, danger=false){
-    const b = document.createElement('button'); b.textContent = label; if(danger) b.classList.add('danger');
-    b.onclick = async (e)=>{ e.stopPropagation(); wrap.style.display='none'; try{ await fn(); } catch(err){ alert('Action failed: '+(err.message||String(err))); console.error(err); } };
-    wrap.appendChild(b);
+  async function ensureRoom(){
+    const roomRef = doc(db, 'rooms', ROOM_ID);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) await setDoc(roomRef, { name: 'global chat', createdAt: serverTimestamp() }, { merge: true });
   }
 
-  if(me || amMod) add('Delete message', ()=> deleteDoc(doc(db,'rooms',ROOM_ID,'messages',docId)), true);
+  // ---------- Device ID (client-side) ----------
+  function getDeviceId(){
+    let id = localStorage.getItem('device_id');
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem('device_id', id); }
+    return id;
+  }
+  const deviceId = getDeviceId();
 
-  add(blocked.has(m.uid) ? 'Unblock user (local)' : 'Block user (local)', ()=> {
-    if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid);
-    localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked)));
-    document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed', blocked.has(m.uid)));
-    renderBlockedList();
-  });
+  // ---------- Local blocks ----------
+  const storageKey = 'blocked_uids';
+  const getBlocked = ()=>{try{return new Set(JSON.parse(localStorage.getItem(storageKey)||'[]'))}catch{return new Set()}};
+  const setBlocked = (s)=>localStorage.setItem(storageKey, JSON.stringify(Array.from(s)));
+  let blocked = getBlocked();
 
-  add('Send friend request', async ()=> {
-    if(!currentUser){ alert('Sign in first'); return; }
-    if(blocked.has(m.uid) || blocked.has(currentUser.uid)){ alert('Cannot send friend request (blocked)'); return; }
-    if(currentUser.uid === m.uid){ alert("Can't friend yourself"); return; }
-    await setDoc(doc(db,'users', m.uid, 'friendRequests', currentUser.uid), {
-      from: currentUser.uid, fromName: currentUser.displayName || '', at: serverTimestamp(), status: 'pending'
+  // ---------- Input / counter ----------
+  function updateCounter(){
+    const len = input.value.length;
+    counter.textContent = `${len} / ${MAX_LEN}`;
+    sendBtn.disabled = (len===0 || len>MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan);
+  }
+  input.addEventListener('input', () => { updateCounter(); input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,160)+'px'; });
+  input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }});
+  updateCounter();
+
+  // ---------- Time helpers ----------
+  const mins = m=>m*60*1000, hours=h=>h*3600*1000, days=d=>d*24*3600*1000;
+  const fmtTime = ts=>{try{return new Date(ts?.toMillis?.()??ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch{return''}};
+  const fmtDateTime = ms=> new Date(ms).toLocaleString();
+  function parseHumanDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
+
+  // ---------- Mods state ----------
+  let modUIDs = new Set();
+  let myIsModCached = null;
+
+  function watchModsList(){
+    onSnapshot(modsColl, (snap)=>{
+      const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s;
+      paintHeaderCrown();
     });
-    // also index in sender
-    await setDoc(doc(db,'users', currentUser.uid, 'sentRequests', m.uid), { at: serverTimestamp() });
-    alert('Friend request sent');
-    loadFriendsPanel();
-  });
-
-  add('DM', async ()=> {
-    if(!currentUser){ alert('Sign in first'); return; }
-    if(blocked.has(m.uid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
-    const otherSnap = await getDoc(doc(db,'users', m.uid));
-    const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-    if(!allow){ alert('User has DMs turned off'); return; }
-    openDMWith(m.uid, m.name || m.username || m.uid);
-  });
-
-  return wrap;
-}
-
-function renderPublicMessage(docSnap, myUid){
-  const m = docSnap.data();
-  const row = document.createElement('div');
-  row.className = 'msg';
-  row.dataset.uid = m.uid || '';
-  if(m.uid === myUid) row.classList.add('me');
-
-  const bubble = document.createElement('div'); bubble.className = 'bubble';
-  const name = document.createElement('div'); name.className='name';
-  const label = document.createElement('span'); label.textContent = m.name || m.username || 'Anon';
-  name.appendChild(label);
-  if(m.uid && (modUIDs.has(m.uid) || m.uid === SUPERADMIN_UID)){ const cr = document.createElement('span'); cr.className='crown'; cr.textContent=' 👑'; name.appendChild(cr); }
-
-  let textToShow = m.text || '';
-  if(mySettings.censor) textToShow = censorText(textToShow);
-  const text = document.createElement('div'); text.className='text'; text.textContent = textToShow;
-  const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
-
-  const menuBtn = document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
-  const menu = makeUserMenu(docSnap.id, m);
-  menuBtn.onclick = (e) => { e.stopPropagation(); menu.style.display = (menu.style.display === 'block' ? 'none' : 'block'); };
-  document.addEventListener('click', ()=> { menu.style.display = 'none'; });
-
-  bubble.appendChild(name); bubble.appendChild(text); bubble.appendChild(ts);
-  row.appendChild(bubble); row.appendChild(menuBtn); row.appendChild(menu);
-
-  if(blocked.has(m.uid)) row.classList.add('collapsed');
-
-  const tsMs = m.ts?.toMillis?.() ?? Date.now();
-  const grouped = (lastUid === m.uid) && (tsMs - lastTsMs <= GROUP_WINDOW_MS);
-  row.classList.toggle('grouped', grouped);
-  row.classList.toggle('group-start', !grouped);
-  lastUid = m.uid; lastTsMs = tsMs;
-
-  messagesEl.appendChild(row);
-}
-
-/* ========= DMs ========= */
-async function openDMWith(otherUid, otherName){
-  const me = auth.currentUser;
-  if(!me){ alert('Sign in first'); return; }
-  if(blocked.has(otherUid) || blocked.has(me.uid)){ alert('Cannot DM (blocked)'); return; }
-  const otherSnap = await getDoc(doc(db,'users',otherUid));
-  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-  if(!allow){ alert('User has DMs turned off'); return; }
-
-  const id = convIdFrom(me.uid, otherUid);
-  currentDMConv = { id, otherUid, otherName: otherName || (otherSnap.data()?.username || otherUid) };
-  dmHeader.textContent = `DM — ${currentDMConv.otherName}`;
-  dmForm.style.display = '';
-  dmInput.value = '';
-  dmThreadEl.innerHTML = '';
-
-  // ensure conversation doc exists with participants
-  await setDoc(doc(db,'dms', id), { participants: [me.uid, otherUid], createdAt: serverTimestamp() }, { merge:true });
-
-  // Listen to messages
-  const msgsQuery = query(collection(db,'dms', id, 'messages'), orderBy('ts','asc'), limit(500));
-  onSnapshot(msgsQuery, (snap)=>{
-    dmThreadEl.innerHTML = '';
-    snap.forEach(d=>{
-      const data = d.data();
-      let txt = data.text || '';
-      if(mySettings.censor) txt = censorText(txt);
-      const mdiv = document.createElement('div');
-      mdiv.className = 'item';
-      mdiv.style.textAlign = data.senderId === me.uid ? 'right' : 'left';
-      mdiv.textContent = `${data.senderName || data.senderId}: ${txt} (${fmtTime(data.ts)})`;
-      dmThreadEl.appendChild(mdiv);
+  }
+  function watchMyModDoc(uid, email){
+    onSnapshot(modDoc(uid), (snap)=>{
+      const nowIsMod = (snap.exists() || email===OWNER_EMAIL);
+      if (myIsModCached === null) { myIsModCached = nowIsMod; return; }
+      if (nowIsMod !== myIsModCached) { myIsModCached = nowIsMod; location.reload(); }
     });
-    dmThreadEl.scrollTop = dmThreadEl.scrollHeight;
-  });
-
-  // index on both users
-  await setDoc(doc(db,'users', me.uid, 'dms', id), { with: otherUid, at: serverTimestamp() }, { merge:true });
-  await setDoc(doc(db,'users', otherUid, 'dms', id), { with: me.uid, at: serverTimestamp() }, { merge:true });
-
-  switchTab('dms');
-}
-
-dmForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!currentUser || !currentDMConv){ alert('No conversation'); return; }
-  const text = dmInput.value.trim();
-  if(!text) return;
-  if(blocked.has(currentDMConv.otherUid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
-  const otherSnap = await getDoc(doc(db,'users', currentDMConv.otherUid));
-  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-  if(!allow){ alert('User has DMs turned off'); return; }
-
-  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
-    alert('Message blocked by automod.');
-    dmInput.value = '';
-    return;
+  }
+  const isMod = (uid,email)=> modUIDs.has(uid) || email===OWNER_EMAIL;
+  function paintHeaderCrown(){
+    if(!auth.currentUser) return;
+    const crown = isMod(auth.currentUser.uid, auth.currentUser.email) ? ' <span class="crown">👑</span>' : '';
+    whoami.innerHTML = `@${auth.currentUser.displayName || 'user'} · ${auth.currentUser.email || ''}${crown}`;
   }
 
-  const id = currentDMConv.id;
-  await addDoc(collection(db,'dms', id, 'messages'), {
-    senderId: currentUser.uid,
-    senderName: currentUser.displayName || '',
-    receiverId: currentDMConv.otherUid,
-    text,
-    ts: serverTimestamp()
+  // ---------- Grouping state ----------
+  let lastUid = null, lastTsMs = 0;
+
+  // ---------- Swear censor (client-side only) ----------
+  const CENSOR_ON = ()=> localStorage.getItem(LS_CENSOR) === '1';
+  // lightweight list (no slurs here—those are handled by automod elsewhere)
+  const SWEARS = [
+    'fuck','shit','bitch','asshole','dick','piss','bastard','crap','bollocks','bloody','bugger','bollock',
+    'motherfucker','bullshit','wanker','tosser','prick','cunt','twat','damn','goddamn','fucking','shithead'
+  ];
+  const SWEAR_RE = new RegExp(`\\b(${SWEARS.map(s=>s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')).
+    sort((a,b)=>b.length-a.length).join('|')})\\b`,'gi');
+  function censorText(s){
+    if(!CENSOR_ON()) return s;
+    return s.replace(SWEAR_RE, (m)=> m[0] + '*'.repeat(Math.max(0,m.length-1)));
+  }
+
+  // ---------- Render helpers ----------
+  async function grantMod(targetUid){
+    try { await setDoc(modDoc(targetUid), { isMod:true, by:auth.currentUser.uid, at:serverTimestamp() }, { merge:true }); }
+    catch(e){ alert('Grant mod failed: ' + (e.message || String(e))); console.error(e); }
+  }
+  async function removeMod(targetUid){
+    try { await deleteDoc(modDoc(targetUid)); }
+    catch(e){ alert('Remove mod failed: ' + (e.message || String(e))); console.error(e); }
+  }
+
+  function makeMenu(msgId, m){
+    const wrap=document.createElement('div'); wrap.className='menu';
+    const me = auth.currentUser?.uid===m.uid;
+    const amMod = isMod(auth.currentUser?.uid, auth.currentUser?.email);
+    const add=(label,fn,danger=false)=>{const b=document.createElement('button'); b.textContent=label; if(danger)b.classList.add('danger'); b.onclick=async(e)=>{e.stopPropagation();wrap.style.display='none';await fn();}; wrap.appendChild(b);};
+
+    if(me||amMod) add('Delete message', ()=>deleteDoc(doc(db,'rooms',ROOM_ID,'messages',msgId)), true);
+
+    const isBlk = blocked.has(m.uid);
+    add(isBlk?'Unblock user (local)':'Block user (local)', ()=>{ if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid); setBlocked(blocked); document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed',blocked.has(m.uid))); });
+
+    if(amMod && m.uid){
+      add('Mute…', async ()=>{ const dur=prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms=parseHumanDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 10m, 1h, 1d');return;} const reason=prompt('Reason (shown to user)')||''; await setMute(m.uid,ms,reason); }, true);
+      add('Ban…',  async ()=>{ const dur=prompt('Ban duration? (e.g., 1h, 1d, 7d)');  const ms=parseHumanDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 1h, 1d, 7d');return;} const reason=prompt('Reason (shown to user)')||''; await setBan(m.uid,ms,reason); }, true);
+      add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason); }, true);
+      add('Unmute', ()=>setMute(m.uid,0,''));
+      add('Unban',  ()=>setBan(m.uid,0,''));
+      if (m.email === "fressolaben@gmail.com") {
+        add('Owner (cannot be changed)', ()=>{});
+      } else if(modUIDs.has(m.uid)) {
+        add('Remove moderator', ()=> removeMod(m.uid));
+      } else {
+        add('Grant moderator', ()=> grantMod(m.uid));
+      }
+    }
+    return wrap;
+  }
+
+  function renderMessage(docSnap, meUid){
+    const d = docSnap.data();
+    const tsMs = d.ts?.toMillis?.() ?? Date.now();
+
+    const row=document.createElement('div'); row.className='msg'; row.dataset.uid=d.uid||'';
+    const b=document.createElement('div'); b.className='bubble';
+
+    const name=document.createElement('div'); name.className='name';
+    const label=document.createElement('span'); label.textContent=d.name||'Anon'; name.appendChild(label);
+    if(d.uid && modUIDs.has(d.uid)){const cr=document.createElement('span'); cr.className='crown'; cr.textContent='👑'; name.appendChild(cr);}
+    const text=document.createElement('div'); text.className='text'; text.textContent = censorText(d.text||'');
+    const ts=document.createElement('div'); ts.className='ts'; ts.textContent=fmtTime(d.ts);
+
+    const isGrouped = (lastUid === d.uid) && (tsMs - lastTsMs <= GROUP_WINDOW_MS);
+    row.classList.toggle('grouped', isGrouped);
+    row.classList.toggle('group-start', !isGrouped);
+
+    const menuBtn=document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
+    const menu=makeMenu(docSnap.id, d);
+    menuBtn.onclick=(e)=>{e.stopPropagation(); menu.style.display=(menu.style.display==='block'?'none':'block');};
+    document.addEventListener('click',()=>menu.style.display='none');
+
+    b.append(name,text,ts); row.append(b,menuBtn,menu);
+    if(blocked.has(d.uid)) row.classList.add('collapsed');
+    if(blocked.has(d.uid)){const show=document.createElement('button'); show.className='show-btn'; show.textContent='Show message'; show.onclick=(e)=>{e.stopPropagation(); row.classList.remove('collapsed'); show.remove();}; b.appendChild(show);}
+
+    lastUid = d.uid; lastTsMs = tsMs;
+    messagesEl.appendChild(row);
+  }
+
+  function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+  // ---------- Username registry ----------
+  async function claimUsernameTx(username, uid){
+    const uname=username.toLowerCase(); const unameRef=doc(db,'usernames',uname);
+    await runTransaction(db,async(tx)=>{ const s=await tx.get(unameRef); if(s.exists()) throw new Error('Username is taken'); tx.set(unameRef,{uid,at:serverTimestamp()}); });
+  }
+
+  // ---------- Google sign-in ----------
+  const provider = new GoogleAuthProvider();
+  googleBtn.onclick = async ()=>{ try{ if(auth.currentUser) await linkWithPopup(auth.currentUser,provider); else await signInWithPopup(auth,provider); if(authMsg) authMsg.textContent=''; updateCounter(); }
+    catch(err){ try{ if(authMsg) authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth,provider); } catch(err2){ if(authMsg) authMsg.textContent=err2.message||String(err2);} } };
+  getRedirectResult(auth).catch(err=>{ if(err && authMsg) authMsg.textContent = err.message || String(err); });
+
+  // ---------- Email/Password ----------
+  document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const username=(document.getElementById('su-username').value||'').trim();
+    const email=document.getElementById('su-email').value.trim();
+    const pass=document.getElementById('su-pass').value;
+    if(!/^[a-z0-9_]{3,20}$/i.test(username)){authMsg.textContent='Use 3–20 chars: a–z, 0–9, _';return;}
+    try{ const cred=await createUserWithEmailAndPassword(auth,email,pass); await claimUsernameTx(username,cred.user.uid); await updateProfile(cred.user,{displayName:username}); await setDoc(doc(db,'users',cred.user.uid),{username,email,deviceId,createdAt:serverTimestamp()},{merge:true}); authMsg.textContent='Account created. You are signed in.'; updateCounter(); }
+    catch(err){ authMsg.textContent = err.message || String(err); }
+  });
+  document.getElementById('signinForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email=document.getElementById('si-email').value.trim();
+    const pass =document.getElementById('si-pass').value;
+    try{ await signInWithEmailAndPassword(auth,email,pass); authMsg.textContent='Signed in.'; updateCounter(); }
+    catch(err){ authMsg.textContent = err.message || String(err); }
   });
 
-  // re-index
-  await setDoc(doc(db,'users', currentUser.uid, 'dms', id), { with: currentDMConv.otherUid, at: serverTimestamp() }, { merge:true });
-  await setDoc(doc(db,'users', currentDMConv.otherUid, 'dms', id), { with: currentUser.uid, at: serverTimestamp() }, { merge:true });
+  // ---------- Ban/mute UI state ----------
+  let sendingDisabledByBan=false;
+  function showBanState(b){
+    sendingDisabledByBan=false; banNotice.textContent='';
+    const now=Date.now(); if(!b) return;
+    const perma=!!b.perma, muteUntil=b.muteUntil?.toMillis?.()??0, banUntil=b.banUntil?.toMillis?.()??0, reason=b.reason||'';
+    if(perma || banUntil>now){ sendingDisabledByBan=true; banNotice.textContent=(perma?'Permanently banned':`Banned until ${fmtDateTime(banUntil)}`)+(reason?` — Reason: ${reason}`:''); }
+    else if(muteUntil>now){ sendingDisabledByBan=true; banNotice.textContent=`Muted until ${fmtDateTime(muteUntil)}`+(reason?` — Reason: ${reason}`:''); }
+  }
 
-  dmInput.value = '';
-});
+  // ---------- Anti-spam ----------
+  const sendTimes=[]; let cooldownUntil=0; let lastSentAt=0;
+  function isRateLimited(){
+    const now=Date.now(); while(sendTimes.length && now-sendTimes[0]>2000) sendTimes.shift();
+    if(now<cooldownUntil){ const rem=Math.ceil((cooldownUntil-now)/1000); throttleMsg.textContent=`Slow mode: 1 msg/sec for ${rem}s`; if(now-lastSentAt<1000) return true; return false; }
+    throttleMsg.textContent=''; if(sendTimes.length>5){ cooldownUntil=now+10000; throttleMsg.textContent='Slow mode: 1 msg/sec for 10s'; } return false;
+  }
+  const noteSent=()=>{ const n=Date.now(); sendTimes.push(n); lastSentAt=n; updateCounter(); };
 
-/* ========= Friends ========= */
-async function loadFriendsPanel(){
-  friendsTabContent.innerHTML = '';
-  if(!currentUser){ friendsTabContent.textContent = 'Sign in to manage friends'; return; }
-  showFriendsSubtab('friends');
-}
-ftabFriends.addEventListener('click', ()=> showFriendsSubtab('friends'));
-ftabRequests.addEventListener('click', ()=> showFriendsSubtab('requests'));
-ftabSent.addEventListener('click', ()=> showFriendsSubtab('sent'));
+  // ---------- Mod writes ----------
+  async function setMute(uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setBan (uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setPerma(uid,reason){ await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
 
-async function showFriendsSubtab(which){
-  ftabFriends.classList.toggle('active', which==='friends');
-  ftabRequests.classList.toggle('active', which==='requests');
-  ftabSent.classList.toggle('active', which==='sent');
-  friendsTabContent.innerHTML = '';
-  if(!currentUser) { friendsTabContent.textContent = 'Sign in to manage friends'; return; }
+  // ---------- AutoMod (client-side for slurs) ----------
+  function normalize(s){
+    return s.toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[1l!]/g,'i').replace(/[3]/g,'e').replace(/[4]/g,'a').replace(/[5$]/g,'s').replace(/[7]/g,'t')
+      .replace(/[^a-z0-9 ]+/g,' ')
+      .replace(/(\w)\1{2,}/g,'$1$1')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  const SLURS = ['nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'];
+  const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
+  const containsSlur = (s)=> SLUR_RE.test(normalize(s));
+  async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
+    await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
+    const ref = doc(db, 'rooms', ROOM_ID, 'automod', uid);
+    const snap = await getDoc(ref);
+    const now = Date.now();
+    let strikes = 0, last = 0;
+    if (snap.exists()) { strikes = snap.data().strikes||0; last = snap.data().lastAt?.toMillis?.() ?? 0; }
+    if (now - last > 24*3600*1000) strikes = 0;
+    strikes += 1;
+    const ladder = [60e3, 5*60e3, 10*60e3, 20*60e3, 3600e3, 6*3600e3, 86400e3*7, 86400e3*21, 86400e3*42];
+    const muteMs = ladder[Math.min(strikes-1, ladder.length-1)];
+    await setDoc(ref, { strikes, lastAt: serverTimestamp() }, { merge:true });
+    await setMute(uid, muteMs, `AutoMod slur (strike ${strikes})`);
+  }
 
-  if(which === 'friends'){
-    const snap = await getDocs(collection(db,'users', currentUser.uid, 'friends'));
-    if(snap.empty){ friendsTabContent.textContent = 'No friends yet'; return; }
-    snap.forEach(d=>{
-      const el = document.createElement('div'); el.className='item';
-      el.textContent = d.id;
-      const dmBtn = document.createElement('button'); dmBtn.textContent='DM'; dmBtn.onclick = ()=> openDMWith(d.id, d.id);
-      const unfriend = document.createElement('button'); unfriend.textContent='Unfriend'; unfriend.onclick = async ()=>{
-        await deleteDoc(doc(db,'users', currentUser.uid, 'friends', d.id));
-        await deleteDoc(doc(db,'users', d.id, 'friends', currentUser.uid));
-        showFriendsSubtab('friends');
+  // ---------- Sign out ----------
+  signoutBtn.onclick = async ()=>{ await signOut(auth); updateCounter(); };
+
+  // ---------- Mod list render ----------
+  function renderModList(allDocs){
+    const q=(modSearch.value||'').toLowerCase(); modList.innerHTML='';
+    allDocs.forEach(d=>{
+      const b=d.data(), uid=d.id, now=Date.now();
+      const status=[]; if(b.perma) status.push('PERMA BAN'); if((b.banUntil?.toMillis?.()??0)>now) status.push('BANNED'); if((b.muteUntil?.toMillis?.()??0)>now) status.push('MUTED');
+      if(status.length===0) return;
+      const reason=b.reason||'';
+      if(q && ![uid,reason,status.join(', ')].toString().toLowerCase().includes(q)) return;
+
+      const item=document.createElement('div'); item.className='ban-item';
+      const meta=document.createElement('div'); meta.className='meta';
+      const who=document.createElement('div'); who.className='who'; who.textContent=uid;
+      const why=document.createElement('div'); why.className='why'; why.textContent=`${status.join(', ')}${reason?' — '+reason:''}`;
+      meta.append(who,why);
+
+      const actions=document.createElement('div'); actions.className='actions';
+      const unmute=document.createElement('button'); unmute.textContent='Unmute'; unmute.onclick=()=>setMute(uid,0,'');
+      const unban =document.createElement('button');  unban.textContent='Unban';  unban.onclick=()=>setBan(uid,0,'');
+      actions.append(unmute,unban);
+
+      item.append(meta,actions); modList.appendChild(item);
+    });
+  }
+
+  // ---------- Flag queue render ----------
+  function renderFlagList(docs){
+    flagList.innerHTML='';
+    const q=(modSearch.value||'').toLowerCase();
+    docs.forEach(d=>{
+      const f=d.data();
+      const hay=[d.id, f.uid||'', f.name||'', f.email||'', f.text||'', f.reason||''].join(' ').toLowerCase();
+      if(q && !hay.includes(q)) return;
+
+      const item=document.createElement('div'); item.className='flag-item';
+      const meta=document.createElement('div'); meta.className='meta';
+      const who=document.createElement('div'); who.className='who'; who.textContent = `${f.name||'user'} (${f.uid||'?'})`;
+      const why=document.createElement('div'); why.className='why'; why.textContent = `${f.reason||''} — ${f.text||''}`;
+      meta.append(who,why);
+
+      const actions=document.createElement('div'); actions.className='actions';
+      const delMsg=document.createElement('button'); delMsg.textContent='Delete message'; delMsg.onclick=()=>{ if(!f.msgId) return; deleteDoc(doc(db,'rooms',ROOM_ID,'messages',f.msgId)); };
+      const mute5 =document.createElement('button'); mute5.textContent='Mute 5m'; mute5.onclick =()=> setMute(f.uid, 5*60*1000, 'Flag action');
+      const ban1d=document.createElement('button'); ban1d.textContent='Ban 1d'; ban1d.onclick =()=> setBan(f.uid, 24*3600*1000, 'Flag action');
+      const clear =document.createElement('button'); clear.textContent='Clear';  clear.onclick=()=> deleteDoc(doc(db,'rooms',ROOM_ID,'flags',d.id));
+      if (f.msgId) actions.append(delMsg);
+      actions.append(mute5, ban1d, clear);
+
+      item.append(meta,actions); flagList.appendChild(item);
+    });
+  }
+
+  // ---------- Auth + realtime ----------
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+      authState.textContent='signed out';
+      whoami.style.display='none'; signoutBtn.style.display='none';
+      authArea.style.display='block'; sideCol.style.display='block';
+      modPanel.style.display='none'; unamePane.style.display='none';
+      chatCol.style.flex='1 1 100%';
+      return;
+    }
+    authState.textContent='signed in';
+    whoami.style.display='inline-block'; signoutBtn.style.display='inline-block';
+    authArea.style.display='none';
+
+    // default: hide side for non-mod until we know
+    sideCol.style.display='none';
+    chatCol.style.flex='1 1 100%';
+
+    await ensureRoom();
+
+    // profile (device id stored for UI-only purposes)
+    await setDoc(doc(db,'users',user.uid), { email:user.email||'', username:user.displayName||'', deviceId, lastSeen:serverTimestamp() }, { merge:true });
+
+    // mods listeners
+    watchModsList();
+    watchMyModDoc(user.uid, user.email);
+    paintHeaderCrown();
+
+    // Username onboarding if not reserved
+    let showOnboard=true;
+    if(user.displayName){
+      const claimed=await getDoc(doc(db,'usernames',user.displayName.toLowerCase()));
+      showOnboard=!(claimed.exists() && claimed.data().uid===user.uid);
+    }
+    unamePane.style.display=showOnboard?'block':'none';
+
+    // my ban/mute banner
+    onSnapshot(banDoc(user.uid),(snap)=>showBanState(snap.data()||null));
+
+    // if mod, show side & attach mod-only listeners
+    const becomeModNow = isMod(user.uid, user.email);
+    if (becomeModNow) {
+      sideCol.style.display='block';
+      modPanel.style.display='block';
+      chatCol.style.flex='2';
+
+      onSnapshot(bansColl,(snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderModList(docs); });
+      onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), (snap)=>{ const docs=[]; snap.forEach(d=>docs.push(d)); renderFlagList(docs); });
+      modSearch.oninput = async ()=>{
+        const [bSnap, fSnap] = await Promise.all([getDocs(bansColl), getDocs(flagsColl)]);
+        const bDocs=[], fDocs=[]; bSnap.forEach(d=>bDocs.push(d)); fSnap.forEach(d=>fDocs.push(d));
+        renderModList(bDocs); renderFlagList(fDocs);
       };
-      const wrap = document.createElement('div'); wrap.append(dmBtn, unfriend);
-      el.appendChild(wrap);
-      friendsTabContent.appendChild(el);
+    } else {
+      modPanel.style.display='none';
+      sideCol.style.display='none';
+      chatCol.style.flex='1 1 100%';
+      modSearch.oninput = null;
+    }
+
+    // realtime messages (hide slurs if they slip through)
+    const qy=query(msgsRef, orderBy('ts','asc'), limit(500));
+    rtState.textContent='listening';
+    onSnapshot(qy,(snap)=>{
+      messagesEl.innerHTML=''; lastUid=null; lastTsMs=0;
+      snap.forEach(d=>{
+        const data=d.data();
+        if (containsSlur(data.text||'') || containsSlur(data.name||'')) {
+          if (isMod(user.uid, user.email)) deleteDoc(doc(db,'rooms',ROOM_ID,'messages',d.id)).catch(()=>{});
+          addDoc(flagsColl, { uid: data.uid, name: data.name||'', email:'', text: data.text||'', reason:'slur (autoscan)', msgId:d.id, at: serverTimestamp() }).catch(()=>{});
+          return;
+        }
+        renderMessage(d, user.uid);
+      });
+      scrollToBottom();
     });
-  } else if(which === 'requests'){
-    const snap = await getDocs(collection(db,'users', currentUser.uid, 'friendRequests'));
-    if(snap.empty){ friendsTabContent.textContent = 'No incoming requests'; return; }
-    snap.forEach(d=>{
-      const data = d.data();
-      const el = document.createElement('div'); el.className='item';
-      el.textContent = `${data.fromName || data.from} (${d.id})`;
-      const accept = document.createElement('button'); accept.textContent='Accept'; accept.onclick = async ()=>{
-        await setDoc(doc(db,'users', currentUser.uid, 'friends', d.id), { at: serverTimestamp() }, { merge:true });
-        await setDoc(doc(db,'users', d.id, 'friends', currentUser.uid), { at: serverTimestamp() }, { merge:true });
-        await deleteDoc(doc(db,'users', currentUser.uid, 'friendRequests', d.id));
-        // also clean sender index
-        await deleteDoc(doc(db,'users', d.id, 'sentRequests', currentUser.uid)).catch(()=>{});
-        showFriendsSubtab('requests');
-      };
-      const decline = document.createElement('button'); decline.textContent='Decline'; decline.onclick = async ()=>{
-        await deleteDoc(doc(db,'users', currentUser.uid, 'friendRequests', d.id));
-        await deleteDoc(doc(db,'users', d.id, 'sentRequests', currentUser.uid)).catch(()=>{});
-        showFriendsSubtab('requests');
-      };
-      const blockBtn = document.createElement('button'); blockBtn.textContent='Block (local)'; blockBtn.onclick = ()=> { blocked.add(d.id); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); renderBlockedList(); };
-      const wrap = document.createElement('div'); wrap.append(accept, decline, blockBtn);
-      el.appendChild(wrap);
-      friendsTabContent.appendChild(el);
-    });
-  } else if(which === 'sent'){
-    const snap = await getDocs(collection(db,'users', currentUser.uid, 'sentRequests'));
-    if(snap.empty){ friendsTabContent.textContent = 'No sent requests'; return; }
-    snap.forEach(d=>{
-      const el = document.createElement('div'); el.className='item';
-      el.textContent = d.id;
-      const cancel = document.createElement('button'); cancel.textContent='Cancel'; cancel.onclick = async ()=>{
-        await deleteDoc(doc(db,'users', currentUser.uid, 'sentRequests', d.id));
-        await deleteDoc(doc(db,'users', d.id, 'friendRequests', currentUser.uid)).catch(()=>{});
-        showFriendsSubtab('sent');
-      };
-      el.appendChild(cancel);
-      friendsTabContent.appendChild(el);
-    });
-  }
-}
 
-/* ========= Settings handling ========= */
-async function loadMySettings(){
-  if(!currentUser) return;
-  const snap = await getDoc(doc(db,'users', currentUser.uid));
-  if(snap.exists()){
-    const d = snap.data();
-    mySettings.allowDMs = d.allowDMs !== false;
-    mySettings.censor = d.censor === true;
-    mySettings.theme = d.theme || 'dark';
-    mySettings.showDmBadge = d.showDmBadge !== false;
-  } else {
-    mySettings = { allowDMs: true, censor:false, theme:'dark', showDmBadge:true };
-    await setDoc(doc(db,'users', currentUser.uid), { allowDMs: true, censor:false, theme:'dark', showDmBadge:true }, { merge:true });
-  }
-  allowDMToggle.checked = mySettings.allowDMs;
-  censorToggle.checked = mySettings.censor;
-  dmBadgeToggle.checked = mySettings.showDmBadge;
-  setTheme(mySettings.theme);
-}
+    // send handler + client-side automod
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      const text=input.value.trim();
+      if(!text || text.length>MAX_LEN) return;
+      if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
 
-allowDMToggle.addEventListener('change', async ()=>{
-  if(!currentUser) return;
-  mySettings.allowDMs = allowDMToggle.checked;
-  await setDoc(doc(db,'users', currentUser.uid), { allowDMs: mySettings.allowDMs }, { merge:true });
-});
-censorToggle.addEventListener('change', async ()=>{
-  if(!currentUser) return;
-  mySettings.censor = censorToggle.checked;
-  await setDoc(doc(db,'users', currentUser.uid), { censor: mySettings.censor }, { merge:true });
-});
-dmBadgeToggle.addEventListener('change', async ()=>{
-  if(!currentUser) return;
-  mySettings.showDmBadge = dmBadgeToggle.checked;
-  await setDoc(doc(db,'users', currentUser.uid), { showDmBadge: mySettings.showDmBadge }, { merge:true });
-});
-themeToggle.addEventListener('click', async ()=>{
-  mySettings.theme = (mySettings.theme === 'dark') ? 'light' : 'dark';
-  setTheme(mySettings.theme);
-  if(currentUser) await setDoc(doc(db,'users', currentUser.uid), { theme: mySettings.theme }, { merge:true });
-});
+      const myName = user.displayName || 'Anon';
+      if (containsSlur(text) || containsSlur(myName)) {
+        await flagAndEscalate(user.uid, myName, user.email, text, 'slur (blocked before send)', null);
+        input.value=''; updateCounter();
+        return;
+      }
 
-/* ========= Signup / Signin / Google ========= */
-signinTab.onclick = ()=> { signinPane.style.display='block'; signupPane.style.display='none'; };
-signupTab.onclick = ()=> { signupPane.style.display='block'; signinPane.style.display='none'; };
-
-document.getElementById('signupForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const username = document.getElementById('su-username').value.trim().toLowerCase();
-  const email = document.getElementById('su-email').value.trim();
-  const pass = document.getElementById('su-pass').value;
-  if(!/^[a-z0-9_]{3,20}$/.test(username)){ authMsg.textContent='Username: 3–20 chars a–z 0–9 _'; return; }
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await claimUsernameTx(username, cred.user.uid);
-    await updateProfile(cred.user, { displayName: username });
-    await setDoc(doc(db,'users',cred.user.uid), { username, email, deviceId, allowDMs:true, censor:false, theme:'dark', showDmBadge:true, createdAt:serverTimestamp() }, { merge:true });
-    authMsg.textContent = 'Account created and signed in';
-  } catch(err){
-    authMsg.textContent = err.message || String(err);
-  }
-});
-
-document.getElementById('signinForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = document.getElementById('si-email').value.trim();
-  const pass = document.getElementById('si-pass').value;
-  try { await signInWithEmailAndPassword(auth, email, pass); authMsg.textContent = 'Signed in'; }
-  catch(err){ authMsg.textContent = err.message || String(err); }
-});
-
-const provider = new GoogleAuthProvider();
-googleBtn.onclick = async ()=> {
-  try { if(auth.currentUser) await linkWithPopup(auth.currentUser, provider); else await signInWithPopup(auth, provider); authMsg.textContent=''; }
-  catch(err){ try{ authMsg.textContent=(err.code||'')+' — trying redirect…'; await signInWithRedirect(auth, provider); } catch(err2){ authMsg.textContent = err2.message || String(err2); } }
-};
-getRedirectResult(auth).catch(err => { if(err) authMsg.textContent = err.message || String(err); });
-
-/* ========= Username registry ========= */
-async function claimUsernameTx(username, uid){
-  const uname = username.toLowerCase();
-  const unameRef = doc(db,'usernames', uname);
-  await runTransaction(db, async (tx)=>{
-    const snap = await tx.get(unameRef);
-    if(snap.exists()) throw new Error('Username already taken');
-    tx.set(unameRef, { uid, at: serverTimestamp() });
+      await addDoc(msgsRef,{ uid:user.uid, name:myName, text, ts:serverTimestamp() });
+      noteSent(); input.value=''; updateCounter(); scrollToBottom();
+    };
   });
-}
 
-/* ========= Moderation helpers ========= */
-function watchModsList(){
-  onSnapshot(modsColl, (snap)=>{
-    const s = new Set(); snap.forEach(d=> s.add(d.id));
-    modUIDs = s;
-    paintHeader();
+  // ---------- Username onboarding ----------
+  document.getElementById('unameForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const username=(document.getElementById('uname-input').value||'').trim().toLowerCase();
+    if(!/^[a-z0-9_]{3,20}$/i.test(username)){ if(authMsg) authMsg.textContent='Use 3–20 chars: a–z, 0–9, _'; return; }
+    try{ await claimUsernameTx(username,auth.currentUser.uid); await updateProfile(auth.currentUser,{displayName:username}); await setDoc(doc(db,'users',auth.currentUser.uid),{username,lastUpdated:serverTimestamp()},{merge:true}); document.getElementById('username-onboard').style.display='none'; if(authMsg) authMsg.textContent='Username saved!'; paintHeaderCrown(); }
+    catch(err){ if(authMsg) authMsg.textContent=err.message||String(err); }
   });
-}
-let myModCached = null;
-function watchMyModDoc(uid){
-  if(!uid) return;
-  const ref = doc(db,'rooms',ROOM_ID,'mods', uid);
-  onSnapshot(ref, (snap)=>{
-    const nowIs = snap.exists();
-    if(myModCached === null){ myModCached = nowIs; return; }
-    if(nowIs !== myModCached){ myModCached = nowIs; location.reload(); }
-  });
-}
-function paintHeader(){
-  if(!currentUser) return;
-  const crown = (modUIDs.has(currentUser.uid) || currentUser.uid === SUPERADMIN_UID) ? ' 👑' : '';
-  whoami.style.display = 'inline-block';
-  whoami.textContent = `@${currentUser.displayName || 'user'} · ${currentUser.email || ''}${crown}`;
-}
 
-async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
-  await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
-}
-
-async function setMute(uid, ms, reason){
-  const until = ms>0 ? new Date(Date.now()+ms) : new Date(0);
-  await setDoc(doc(db,'rooms',ROOM_ID,'bans', uid), { muteUntil: until, by: currentUser?.email || '', at: serverTimestamp(), reason }, { merge:true });
-}
-
-/* ========= Ban state display ========= */
-function showBanState(b){
-  sendingDisabledByBan = false; banNotice.textContent = '';
-  if(!b) return;
-  const now = Date.now();
-  const perma = !!b.perma;
-  const muteUntil = b.muteUntil?.toMillis?.() ?? 0;
-  const banUntil = b.banUntil?.toMillis?.() ?? 0;
-  const reason = b.reason || '';
-  if(perma || banUntil > now){
-    sendingDisabledByBan = true;
-    banNotice.textContent = (perma ? 'Permanently banned' : `Banned until ${new Date(banUntil).toLocaleString()}`) + (reason ? ` — ${reason}` : '');
-  } else if(muteUntil > now){
-    sendingDisabledByBan = true;
-    banNotice.textContent = `Muted until ${new Date(muteUntil).toLocaleString()}` + (reason ? ` — ${reason}` : '');
-  }
-}
-
-/* ========= Public chat: listener & send ========= */
-function startPublicListener(myUid){
-  const q = query(msgsRef, orderBy('ts','asc'), limit(500));
-  rtState.textContent = 'listening';
-  onSnapshot(q, (snap) => {
-    messagesEl.innerHTML = '';
-    lastUid = null; lastTsMs = 0;
-    snap.forEach(d => {
-      const m = d.data();
-      renderPublicMessage(d, myUid);
-    });
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }, (err) => {
-    rtState.textContent = 'error';
-    console.error('messages onSnapshot error', err);
-  });
-}
-
-form.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!currentUser){ alert('Sign in first'); return; }
-  const text = input.value.trim();
-  if(!text || text.length > MAX_LEN) return;
-  if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
-
-  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
-    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur (blocked before send)', null);
-    input.value = ''; updateCounter(); return;
-  }
-
-  await addDoc(msgsRef, {
-    uid: currentUser.uid,
-    name: currentUser.displayName || 'Anon',
-    text,
-    ts: serverTimestamp()  // ✅ Firestore Timestamp
-  });
-  noteSent(); input.value=''; updateCounter(); messagesEl.scrollTop = messagesEl.scrollHeight;
-});
-
-/* ========= Auth handling (DROP-IN) ========= */
-onAuthStateChanged(auth, async (user) => {
-  currentUser = user || null;
-
-  if (!user) {
-    authState.textContent = 'signed out';
-    whoami.style.display = 'none';
-    signoutBtn.style.display = 'none';
-    authArea.style.display = '';
-    sideCol.style.display = '';
-    modPanel.style.display = 'none';
-    updateCounter();
-
-    // read-only chat
-    startPublicListener(null);
-    return;
-  }
-
-  // signed-in
-  authState.textContent = 'signed in';
-  authArea.style.display = 'none';
-  signoutBtn.style.display = '';
-
-  await setDoc(doc(db,'users', user.uid), {
-    email: user.email || '',
-    username: user.displayName || '',
-    deviceId,
-    lastSeen: serverTimestamp()
-  }, { merge:true });
-
-  await loadMySettings();
-  watchModsList();
-  watchMyModDoc(user.uid);
-  paintHeader();
-
-  // show/hide mod panel
-  const imMod = modUIDs.has(user.uid) || user.uid === SUPERADMIN_UID;
-  if(imMod){
-    sideCol.style.display = '';
-    modPanel.style.display = '';
-    chatCol.style.flex = '2';
-
-    onSnapshot(bansColl, snap => {
-      modBans.innerHTML=''; snap.forEach(d=>{ const b = d.data(); const el = document.createElement('div'); el.className='item'; el.textContent = `${d.id} — ${b.reason || ''}`; modBans.appendChild(el); });
-    });
-    onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), snap => {
-      modFlags.innerHTML=''; snap.forEach(d=>{ const f = d.data(); const el = document.createElement('div'); el.className='item'; el.textContent = `${f.name || f.uid} — ${f.reason || ''} — ${f.text?.slice(0,80) || ''}`; modFlags.appendChild(el); });
-    });
-  } else {
-    sideCol.style.display = 'none';
-    modPanel.style.display = 'none';
-    chatCol.style.flex = '1 1 100%';
-  }
-
-  // watch my ban/mute
-  onSnapshot(doc(db,'rooms',ROOM_ID,'bans', user.uid), snap => { showBanState(snap.data() || null); });
-
-  // start public chat
-  startPublicListener(user.uid);
-
-  // misc UI
-  await refreshDmBadge();
-  renderBlockedList();
-});
-
-/* ========= Small utilities ========= */
-function updateDmBadge(count){
-  if(!mySettings.showDmBadge) { dmBadgeEl.textContent = ''; return; }
-  if(!count) { dmBadgeEl.textContent = ''; return; }
-  dmBadgeEl.innerHTML = `<span class="badge">${count}</span>`;
-}
-async function refreshDmBadge(){
-  if(!currentUser) { updateDmBadge(0); return; }
-  const snaps = await getDocs(collection(db,'users', currentUser.uid, 'dms'));
-  updateDmBadge(snaps.size);
-}
-
-/* ========= input behavior ========= */
-input.addEventListener('input', () => { updateCounter(); input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,160)+'px'; });
-input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }});
-dmInput && dmInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); dmForm.requestSubmit(); }});
-
-/* ========= boot ========= */
-setTheme('dark');
-updateCounter();
-setInterval(updateCounter,300);
-setInterval(refreshDmBadge,30000);
-renderBlockedList();
-
-/* ========= Sign out ========= */
-signoutBtn.addEventListener('click', ()=> signOut(auth));
-
+  // keep counter fresh
+  setInterval(updateCounter,300);
 </script>
 </body>
 </html>
