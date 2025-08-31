@@ -820,21 +820,125 @@ function parseHumanDuration(s){ if(!s) return 0; const m = String(s).trim().matc
 function updateDmBadge(count){ if(!mySettings.showDmBadge) { dmBadgeEl.textContent = ''; return; } if(!count) { dmBadgeEl.textContent = ''; return; } dmBadgeEl.innerHTML = `<span class="badge">${count}</span>`; }
 async function refreshDmBadge(){ if(!currentUser) { updateDmBadge(0); return; } const snaps = await getDocs(collection(db,'users', currentUser.uid, 'dms')); updateDmBadge(snaps.size); }
 
-await ensureRoom();
-rtState.textContent = 'listening';
+/* ========= Auth state handling (DROP-IN) ========= */
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user || null;
 
-const q = query(msgsRef, orderBy('ts','asc'), limit(500));
-onSnapshot(q, (snap) => {
-  messagesEl.innerHTML = '';
-  snap.forEach(d => {
-    const m = d.data();
-    renderMessage(m, user.uid); // re-use your existing renderMessage
+  if (!user) {
+    // signed out UI
+    authState.textContent = 'signed out';
+    whoami.style.display = 'none';
+    signoutBtn.style.display = 'none';
+    authArea.style.display = '';
+    sideCol.style.display = '';
+    modPanel.style.display = 'none';
+
+    updateCounter();
+
+    // still show public chat (read-only)
+    try {
+      const q = query(msgsRef, orderBy('ts','asc'), limit(500));
+      onSnapshot(q, (snap) => {
+        messagesEl.innerHTML = '';
+        lastUid = null; lastTsMs = 0;
+        snap.forEach(d => {
+          const m = d.data();
+          renderPublicMessage(d, null);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, (err) => console.error('messages onSnapshot error', err));
+    } catch (e) {
+      console.error('Listener init (signed-out) failed', e);
+    }
+    return;
+  }
+
+  // signed-in UI
+  authState.textContent = 'signed in';
+  authArea.style.display = 'none';
+  signoutBtn.style.display = '';
+
+  // ensure user profile exists / is updated
+  await setDoc(doc(db,'users', user.uid), {
+    email: user.email || '',
+    username: user.displayName || '',
+    deviceId,
+    lastSeen: serverTimestamp()
+  }, { merge:true });
+
+  // settings + theme
+  await loadMySettings();
+
+  // watch mods list (for crowns) and my mod doc (to auto-reload on change)
+  watchModsList();
+  watchMyModDoc(user.uid);
+  paintHeader();
+
+  // if mod, show mod panel and live lists
+  const imMod = modUIDs.has(user.uid) || user.uid === SUPERADMIN_UID;
+  if (imMod) {
+    sideCol.style.display = '';
+    modPanel.style.display = '';
+    chatCol.style.flex = '2';
+
+    onSnapshot(bansColl, snap => {
+      modBans.innerHTML = '';
+      snap.forEach(d=>{
+        const b = d.data();
+        const el = document.createElement('div'); el.className='item';
+        el.textContent = `${d.id} — ${b.reason || ''}`;
+        modBans.appendChild(el);
+      });
+    });
+
+    onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), snap => {
+      modFlags.innerHTML = '';
+      snap.forEach(d=>{
+        const f = d.data();
+        const el = document.createElement('div'); el.className='item';
+        el.textContent = `${f.name || f.uid} — ${f.reason || ''} — ${f.text?.slice(0,80) || ''}`;
+        modFlags.appendChild(el);
+      });
+    });
+  } else {
+    sideCol.style.display = 'none';
+    modPanel.style.display = 'none';
+    chatCol.style.flex = '1 1 100%';
+  }
+
+  // live ban/mute state for this user
+  onSnapshot(doc(db,'rooms',ROOM_ID,'bans', user.uid), snap => {
+    showBanState(snap.data() || null);
   });
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}, (err) => {
-  rtState.textContent = 'error';
-  console.error('messages onSnapshot error', err);
+
+  // ---- PUBLIC CHAT LISTENER (this is the important part) ----
+  try {
+    const q = query(msgsRef, orderBy('ts','asc'), limit(500));
+    rtState.textContent = 'listening';
+
+    onSnapshot(q, (snap) => {
+      messagesEl.innerHTML = '';
+      lastUid = null; lastTsMs = 0;
+      snap.forEach(d => {
+        const m = d.data();
+        // (Optional) skip slurs from display; your automod may also delete them
+        renderPublicMessage(d, user.uid);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }, (err) => {
+      rtState.textContent = 'error';
+      console.error('messages onSnapshot error', err);
+    });
+  } catch (e) {
+    rtState.textContent = 'error';
+    console.error('Listener init failed', e);
+  }
+
+  // misc UI bits
+  await refreshDmBadge();
+  renderBlockedList();
 });
+
 
 
   authState.textContent = 'signed in';
