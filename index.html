@@ -319,7 +319,8 @@ const SUPERADMIN_UID = 'clkCiJePNvaWecDuoTEmqSMohim2';
 const MAX_LEN = 500;
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
-const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages');
+const ROOM_ID = 'global';
+const msgsRef = collection(db, 'rooms', ROOM_ID, 'messages'); // ✅ correct path
 const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
 const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
 const flagsColl = collection(db, 'rooms', ROOM_ID, 'flags');
@@ -534,22 +535,22 @@ async function openDMWith(otherUid, otherName){
   switchTab('dms');
 }
 
-dmForm.addEventListener('submit', async (e)=>{
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if(!currentUser || !currentDMConv){ alert('No conversation'); return; }
-  const text = dmInput.value.trim();
-  if(!text) return;
-  if(blocked.has(currentDMConv.otherUid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
-  const otherSnap = await getDoc(doc(db,'users', currentDMConv.otherUid));
-  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-  if(!allow){ alert('User has DMs turned off'); return; }
+  if (!auth.currentUser) return;
+  const text = input.value.trim();
+  if (!text) return;
 
-  // client-side automod for DMs: if slur, block send and flag (we won't store slurs in DMs)
-  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
-    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur in DM (blocked)', null);
-    dmInput.value = '';
-    return;
-  }
+  await addDoc(msgsRef, {
+    uid: auth.currentUser.uid,
+    name: auth.currentUser.displayName || 'Anon',
+    text,
+    ts: serverTimestamp()   // ✅ NOT a string
+  });
+
+  input.value = '';
+});
+
 
   const id = currentDMConv.id;
   const msgsCol = collection(db,'dms', id, 'messages');
@@ -819,20 +820,22 @@ function parseHumanDuration(s){ if(!s) return 0; const m = String(s).trim().matc
 function updateDmBadge(count){ if(!mySettings.showDmBadge) { dmBadgeEl.textContent = ''; return; } if(!count) { dmBadgeEl.textContent = ''; return; } dmBadgeEl.innerHTML = `<span class="badge">${count}</span>`; }
 async function refreshDmBadge(){ if(!currentUser) { updateDmBadge(0); return; } const snaps = await getDocs(collection(db,'users', currentUser.uid, 'dms')); updateDmBadge(snaps.size); }
 
-/* ========= Auth state handling ========= */
-onAuthStateChanged(auth, async (user) => {
-  currentUser = user || null;
-  if(!user){
-    authState.textContent = 'signed out';
-    whoami.style.display = 'none';
-    signoutBtn.style.display = 'none';
-    authArea.style.display = '';
-    sideCol.style.display = '';
-    modPanel.style.display = 'none';
-    updateCounter();
-    startPublicListener(null);
-    return;
-  }
+await ensureRoom();
+rtState.textContent = 'listening';
+
+const q = query(msgsRef, orderBy('ts','asc'), limit(500));
+onSnapshot(q, (snap) => {
+  messagesEl.innerHTML = '';
+  snap.forEach(d => {
+    const m = d.data();
+    renderMessage(m, user.uid); // re-use your existing renderMessage
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}, (err) => {
+  rtState.textContent = 'error';
+  console.error('messages onSnapshot error', err);
+});
+
 
   authState.textContent = 'signed in';
   authArea.style.display = 'none';
