@@ -412,6 +412,20 @@ button:hover{ background:var(--bubble); }
   const fmtDateTime = ms=> new Date(ms).toLocaleString();
   function parseHumanDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
 
+  // Add once near your other mod helpers
+async function clearPunishments(uid){
+  await setDoc(banDoc(uid), {
+    perma: false,
+    banUntil: new Date(0),
+    muteUntil: new Date(0),
+    reason: '',
+    clearedAt: serverTimestamp()
+  }, { merge: true });
+
+  // optional: clear automod strikes so they don't re-trigger right away
+  await deleteDoc(doc(db,'rooms',ROOM_ID,'automod',uid)).catch(()=>{});
+}
+
   // ---------- Mods state ----------
   let modUIDs = new Set();
   let myIsModCached = null;
@@ -499,8 +513,8 @@ button:hover{ background:var(--bubble); }
       add('Mute…', async ()=>{ const dur=prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms=parseHumanDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 10m, 1h, 1d');return;} const reason=prompt('Reason (shown to user)')||''; await setMute(m.uid,ms,reason); }, true);
       add('Ban…',  async ()=>{ const dur=prompt('Ban duration? (e.g., 1h, 1d, 7d)');  const ms=parseHumanDuration(dur); if(isNaN(ms)||ms<=0){alert('Enter 1h, 1d, 7d');return;} const reason=prompt('Reason (shown to user)')||''; await setBan(m.uid,ms,reason); }, true);
       add('Perma-ban', async ()=>{ const reason=prompt('Reason (shown to user)')||''; if(!confirm('PERMANENT ban — continue?'))return; await setPerma(m.uid,reason); }, true);
-      add('Unmute', ()=>setMute(m.uid,0,''));
-      add('Unban',  ()=>setBan(m.uid,0,''));
+      add('Unmute', ()=>clearPunishments(m.uid));
+      add('Unban',  ()=>clearPunishments(m.uid));
       if (m.email === "fressolaben@gmail.com") {
         add('Owner (cannot be changed)', ()=>{});
       } else if(modUIDs.has(m.uid)) {
@@ -743,13 +757,13 @@ button:hover{ background:var(--bubble); }
       if(!text || text.length>MAX_LEN) return;
       if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
 
-      const myName = user.displayName || 'Anon';
-      // Pre-send check: if this contains a slur, do not send; autoban immediately
-      if (containsSlur(text) || containsSlur(myName)) {
-        await handleSlurFromSender(user, text, null);
-        input.value=''; updateCounter();
-        return;
-      }
+     const myName = user.displayName || 'Anon';
+if (containsSlur(text) || containsSlur(myName)) {
+  await handleSlurFromSender(user, text, null); // autoban, do not send
+  input.value=''; updateCounter();
+  return;
+}
+
 
       await addDoc(msgsRef,{ uid:user.uid, name:myName, text, ts:serverTimestamp() });
       noteSent(); input.value=''; updateCounter(); scrollToBottom();
