@@ -12,7 +12,7 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:1080px;margin:24px auto;padding:0 16px}
+  .wrap{max-width:1200px;margin:20px auto;padding:0 16px}
   header{display:flex;gap:12px;align-items:center;margin:12px 0}
   h1{margin:0;font-size:22px}
   .pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;background:var(--card)}
@@ -32,7 +32,7 @@
   .text{white-space:pre-wrap}
   .ts{color:var(--muted);font-size:12px;margin-top:6px}
   .menu-btn{position:absolute;top:6px;right:6px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
-  .menu{position:absolute;top:28px;right:6px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:200px}
+  .menu{position:absolute;top:28px;right:6px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:220px}
   .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;cursor:pointer;margin:4px 0}
   .menu button.danger{color:var(--danger)}
 
@@ -49,7 +49,7 @@
   .tiny{font-size:12px;color:var(--muted)}
   .right{margin-left:auto;display:flex;gap:8px;align-items:center}
 
-  /* side column */
+  /* side column lists */
   .side-list{display:flex;flex-direction:column;gap:8px}
   .item{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;display:flex;justify-content:space-between;align-items:center}
   .badge{background:var(--accent);padding:4px 8px;border-radius:999px;color:#fff;font-size:12px}
@@ -67,6 +67,7 @@
   /* theme light/dark vars default -> dark */
   :root { --bg:var(--bg-dark); --card:var(--card-dark); --text:#e6eef6; }
   body.light { --bg:var(--bg-light); --card:var(--card-light); --text:var(--text-light); --border:#e0e6ee; --muted:#6b7280; }
+  body{background:var(--bg)}
 </style>
 </head>
 <body>
@@ -134,12 +135,19 @@
       <div id="view-friends" style="display:none">
         <div style="display:flex;gap:12px">
           <div style="flex:1">
-            <div style="font-weight:700">Your friends</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700">Friends</div>
+            </div>
             <div id="friendsList" style="margin-top:8px"></div>
           </div>
+
           <div style="flex:1">
-            <div style="font-weight:700">Friend requests</div>
-            <div id="friendRequests" style="margin-top:8px"></div>
+            <div style="display:flex;gap:8px">
+              <div class="tab active" id="ftab-friends">Friends</div>
+              <div class="tab" id="ftab-requests">Requests</div>
+              <div class="tab" id="ftab-sent">Sent</div>
+            </div>
+            <div id="friendsTabContent" style="margin-top:8px"></div>
           </div>
         </div>
       </div>
@@ -149,9 +157,7 @@
         <div style="font-weight:700">Settings</div>
         <div class="setting">
           <div>Theme</div>
-          <div>
-            <button id="themeToggle">Toggle theme</button>
-          </div>
+          <div><button id="themeToggle">Toggle theme</button></div>
         </div>
         <div class="setting">
           <div>Allow DMs from non-friends</div>
@@ -164,6 +170,10 @@
         <div class="setting">
           <div>Show DMs unread badge</div>
           <div><input type="checkbox" id="dmBadgeToggle" checked></div>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-weight:700">Blocked users (local)</div>
+          <div id="blockedList" style="margin-top:8px"></div>
         </div>
       </div>
     </div>
@@ -219,7 +229,7 @@
 </div>
 
 <script type="module">
-/* ========== Firebase SDKs ========== */
+/* ========= Firebase SDKs ========= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signOut,
@@ -231,7 +241,7 @@ import {
   serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs, where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-/* ========== Config ========== */
+/* ========= Config (your keys) ========= */
 const firebaseConfig = {
   apiKey: "AIzaSyD782fUtLrYCszRZhXIi9jBpZEDjDtZrcw",
   authDomain: "poopy-games-chat.firebaseapp.com",
@@ -246,7 +256,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ========== DOM refs ========== */
+/* ========= DOM refs ========= */
 const tabs = document.querySelectorAll('#mainTabs .tab');
 const dmBadgeEl = document.getElementById('dmBadge');
 
@@ -282,11 +292,13 @@ const dmListEl = document.getElementById('dmList');
 const dmThreadEl = document.getElementById('dmThread');
 const dmForm = document.getElementById('dmForm');
 const dmInput = document.getElementById('dmInput');
-const dmSend = document.getElementById('dmSend');
 const dmHeader = document.getElementById('dmHeader');
 
 const friendsList = document.getElementById('friendsList');
-const friendRequests = document.getElementById('friendRequests');
+const friendsTabContent = document.getElementById('friendsTabContent');
+const ftabFriends = document.getElementById('ftab-friends');
+const ftabRequests = document.getElementById('ftab-requests');
+const ftabSent = document.getElementById('ftab-sent');
 
 const modPanel = document.getElementById('modPanel');
 const modBans = document.getElementById('modBans');
@@ -297,12 +309,13 @@ const censorToggle = document.getElementById('censorToggle');
 const themeToggle = document.getElementById('themeToggle');
 const dmBadgeToggle = document.getElementById('dmBadgeToggle');
 
+const blockedListEl = document.getElementById('blockedList');
 const unameForm = document.getElementById('unameForm');
 const unameInput = document.getElementById('uname-input');
 
-/* ========== constants & refs ========== */
+/* ========= constants & refs ========= */
 const ROOM_ID = 'global';
-const OWNER_EMAIL = 'fressolaben@gmail.com';
+const SUPERADMIN_UID = 'clkCiJePNvaWecDuoTEmqSMohim2';
 const MAX_LEN = 500;
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
@@ -311,11 +324,10 @@ const bansColl = collection(db, 'rooms', ROOM_ID, 'bans');
 const modsColl = collection(db, 'rooms', ROOM_ID, 'mods');
 const flagsColl = collection(db, 'rooms', ROOM_ID, 'flags');
 
-const usersCol = collection(db, 'users');
-const dmsRoot = collection(db, 'dms'); // collections created via doc(db,'dms',convId)
+const usersRoot = collection(db,'users');
 
-/* ========== local state ========== */
-let currentTab = 'chat';
+/* ========= state ========= */
+let currentUser = null;
 let modUIDs = new Set();
 let lastUid = null, lastTsMs = 0;
 let sendingDisabledByBan = false;
@@ -324,10 +336,9 @@ let blocked = ( () => { try { return new Set(JSON.parse(localStorage.getItem('bl
 let deviceId = ( () => { let id = localStorage.getItem('device_id'); if(!id){ id = crypto.randomUUID(); localStorage.setItem('device_id', id);} return id; })();
 
 let mySettings = { allowDMs: true, censor: false, theme: 'dark', showDmBadge: true };
-let currentUser = null;
-let currentDMConv = null; // {id, otherUid}
+let currentDMConv = null; // { id, otherUid, otherName }
 
-/* ========== helper funcs ========== */
+/* ========= helpers ========= */
 function setTheme(theme){ if(theme === 'light'){ document.body.classList.add('light'); } else { document.body.classList.remove('light'); } }
 function updateCounter(){ const len = input.value.length; counterEl.textContent = `${len} / ${MAX_LEN}`; sendBtn.disabled = (len===0 || len>MAX_LEN || !auth.currentUser || isRateLimited() || sendingDisabledByBan); }
 function isRateLimited(){ const now=Date.now(); while(sendTimes.length && now-sendTimes[0] > 2000) sendTimes.shift(); if(now < cooldownUntil){ const rem = Math.ceil((cooldownUntil-now)/1000); throttleMsg.textContent = `Slow mode: 1 msg/sec for ${rem}s`; if(now - lastSentAt < 1000) return true; return false; } throttleMsg.textContent=''; if(sendTimes.length>5){ cooldownUntil = now + 10000; throttleMsg.textContent='Slow mode: 1 msg/sec for 10s'; } return false; }
@@ -335,7 +346,7 @@ function noteSent(){ const n = Date.now(); sendTimes.push(n); lastSentAt = n; up
 function fmtTime(ts){ try{ return new Date(ts?.toMillis?.() ?? ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return ''; } }
 function convIdFrom(u1,u2){ return [u1,u2].sort().join('_'); }
 
-/* ========== AutoMod / Slur handling (client-side) ========== */
+/* ========= AutoMod / slur handling ========= */
 function normalizeText(s){
   return s.toLowerCase()
     .normalize('NFD').replace(/\p{Diacritic}/gu,'')
@@ -347,30 +358,37 @@ function normalizeText(s){
 const SLURS = ['nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'];
 const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
 function containsSlur(s){ return SLUR_RE.test(normalizeText(s||'')); }
-function censorText(s){
-  const norm = normalizeText(s);
-  return s.replace(new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'ig'), (m)=>'*'.repeat(Math.max(1,m.length)));
-}
+function censorText(s){ return s.replace(SLUR_RE, (m)=>'*'.repeat(Math.max(1,m.length))); }
 
-/* ========== UI helpers ========== */
+/* ========= UI helpers ========= */
 function switchTab(tab){
-  currentTab = tab;
-  tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('#mainTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tab === tab));
   viewChat.style.display = tab === 'chat' ? '' : 'none';
   viewDMs.style.display = tab === 'dms' ? '' : 'none';
   viewFriends.style.display = tab === 'friends' ? '' : 'none';
   viewSettings.style.display = tab === 'settings' ? '' : 'none';
   if(tab === 'dms') loadDMConversations();
-  if(tab === 'friends') loadFriendsAndRequests();
+  if(tab === 'friends') loadFriendsPanel();
 }
 document.querySelectorAll('#mainTabs .tab').forEach(t=>t.addEventListener('click', ()=> switchTab(t.dataset.tab)));
 
-/* ========== DOM renderers ========== */
-// render a public chat message with grouping and menu
+function renderBlockedList(){
+  blockedListEl.innerHTML = '';
+  if(blocked.size === 0) { blockedListEl.textContent = 'No locally blocked users'; return; }
+  Array.from(blocked).forEach(uid=>{
+    const el = document.createElement('div'); el.className='item';
+    el.textContent = uid;
+    const btn = document.createElement('button'); btn.textContent='Unblock (local)'; btn.onclick = ()=>{ blocked.delete(uid); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); renderBlockedList(); };
+    el.appendChild(btn);
+    blockedListEl.appendChild(el);
+  });
+}
+
+/* ========= Public chat: menu & rendering ========= */
 function makeUserMenu(docId, m){
   const wrap = document.createElement('div'); wrap.className='menu';
   const me = currentUser && currentUser.uid === m.uid;
-  const amMod = currentUser && (modUIDs.has(currentUser.uid) || currentUser.email === OWNER_EMAIL);
+  const amMod = currentUser && (modUIDs.has(currentUser.uid) || currentUser.email === SUPERADMIN_UID);
 
   function add(label, fn, danger=false){
     const b = document.createElement('button'); b.textContent = label; if(danger) b.classList.add('danger');
@@ -379,26 +397,27 @@ function makeUserMenu(docId, m){
   }
 
   if(me || amMod) add('Delete message', ()=> deleteDoc(doc(db,'rooms',ROOM_ID,'messages',docId)), true);
-  add(blocked.has(m.uid) ? 'Unblock user (local)' : 'Block user (local)', ()=> { if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed', blocked.has(m.uid)));});
+  add(blocked.has(m.uid) ? 'Unblock user (local)' : 'Block user (local)', ()=> { if(blocked.has(m.uid)) blocked.delete(m.uid); else blocked.add(m.uid); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); document.querySelectorAll(`[data-uid="${m.uid}"]`).forEach(el=>el.classList.toggle('collapsed', blocked.has(m.uid))); renderBlockedList(); });
+
   add('Send friend request', async ()=> {
-    if(!currentUser) { alert('Sign in first'); return; }
-    if(blocked.has(m.uid)) { alert('You are blocked or have blocked this user'); return; }
-    // cannot friend yourself
-    if(currentUser.uid === m.uid) { alert("You can't friend yourself"); return; }
-    await setDoc(doc(db,'users',m.uid,'friendRequests',currentUser.uid), { from: currentUser.uid, at: serverTimestamp(), name: currentUser.displayName || '' });
+    if(!currentUser){ alert('Sign in first'); return; }
+    if(blocked.has(m.uid) || blocked.has(currentUser.uid)){ alert('Cannot send friend request (blocked)'); return; }
+    if(currentUser.uid === m.uid){ alert("Can't friend yourself"); return; }
+    // ensure target allows friend requests? (we assume allowed by default)
+    await setDoc(doc(db,'users', m.uid, 'friendRequests', currentUser.uid), { from: currentUser.uid, fromName: currentUser.displayName || '', at: serverTimestamp(), status: 'pending' });
     alert('Friend request sent');
+    loadFriendsPanel(); // refresh UI
   });
+
   add('DM', async ()=> {
     if(!currentUser){ alert('Sign in first'); return; }
     if(blocked.has(m.uid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
-    // check target's allowDMs
-    const userSnap = await getDoc(doc(db,'users',m.uid));
-    const allow = userSnap.exists() ? (userSnap.data().allowDMs !== false) : true;
+    const otherSnap = await getDoc(doc(db,'users', m.uid));
+    const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
     if(!allow){ alert('User has DMs turned off'); return; }
-    openDMWith(m.uid, m.name || 'user');
+    openDMWith(m.uid, m.name || m.username || m.uid);
   });
 
-  // moderator actions
   if(amMod && m.uid){
     add('Mute…', async ()=> {
       const dur = prompt('Mute duration? (e.g., 10m, 1h, 1d)'); const ms = parseHumanDuration(dur);
@@ -423,7 +442,7 @@ function makeUserMenu(docId, m){
     add('Unmute', ()=> setDoc(doc(db,'rooms',ROOM_ID,'bans',m.uid), { muteUntil: new Date(0) }, { merge:true }));
     add('Unban', ()=> setDoc(doc(db,'rooms',ROOM_ID,'bans',m.uid), { banUntil: new Date(0), perma:false }, { merge:true }));
 
-    // grant/remove mod (owner protected on server rules too)
+    // grant/remove mod (owner protected by server rules)
     if(currentUser && m.uid && m.uid !== currentUser.uid){
       if(modUIDs.has(m.uid)){
         add('Remove moderator', async ()=> { await deleteDoc(doc(db,'rooms',ROOM_ID,'mods', m.uid)); });
@@ -445,28 +464,23 @@ function renderPublicMessage(docSnap, myUid){
 
   const bubble = document.createElement('div'); bubble.className = 'bubble';
   const name = document.createElement('div'); name.className='name';
-  const label = document.createElement('span'); label.textContent = m.name || 'Anon';
+  const label = document.createElement('span'); label.textContent = m.name || m.username || 'Anon';
   name.appendChild(label);
   if(m.uid && modUIDs.has(m.uid)){ const cr = document.createElement('span'); cr.className='crown'; cr.textContent=' 👑'; name.appendChild(cr); }
 
   let textToShow = m.text || '';
-  if(mySettings.censor) textToShow = textToShow.replace(SLUR_RE, (s)=>'*'.repeat(Math.max(1,s.length)));
+  if(mySettings.censor) textToShow = censorText(textToShow);
   const text = document.createElement('div'); text.className='text'; text.textContent = textToShow;
   const ts = document.createElement('div'); ts.className='ts'; ts.textContent = fmtTime(m.ts);
 
   const menuBtn = document.createElement('div'); menuBtn.className='menu-btn'; menuBtn.textContent='⋯';
   const menu = makeUserMenu(docSnap.id, m);
-  menuBtn.onclick = (e)=>{ e.stopPropagation(); menu.style.display = (menu.style.display === 'block' ? 'none' : 'block'); };
+  menuBtn.onclick = (e) => { e.stopPropagation(); menu.style.display = (menu.style.display === 'block' ? 'none' : 'block'); };
   document.addEventListener('click', ()=> { menu.style.display = 'none'; });
 
-  bubble.appendChild(name);
-  bubble.appendChild(text);
-  bubble.appendChild(ts);
-  row.appendChild(bubble);
-  row.appendChild(menuBtn);
-  row.appendChild(menu);
+  bubble.appendChild(name); bubble.appendChild(text); bubble.appendChild(ts);
+  row.appendChild(bubble); row.appendChild(menuBtn); row.appendChild(menu);
 
-  // collapsed if blocked
   if(blocked.has(m.uid)) row.classList.add('collapsed');
 
   // grouping
@@ -479,14 +493,14 @@ function renderPublicMessage(docSnap, myUid){
   messagesEl.appendChild(row);
 }
 
-/* ========== DM functions ========== */
+/* ========= DM system ========= */
 async function openDMWith(otherUid, otherName){
   const me = auth.currentUser;
   if(!me){ alert('Sign in first'); return; }
   if(blocked.has(otherUid) || blocked.has(me.uid)){ alert('Cannot DM (blocked)'); return; }
   const otherSnap = await getDoc(doc(db,'users',otherUid));
-  const allowDMs = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-  if(!allowDMs){ alert('User has DMs turned off'); return; }
+  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
+  if(!allow){ alert('User has DMs turned off'); return; }
 
   const id = convIdFrom(me.uid, otherUid);
   currentDMConv = { id, otherUid, otherName: otherName || (otherSnap.data()?.username || otherUid) };
@@ -495,83 +509,142 @@ async function openDMWith(otherUid, otherName){
   dmInput.value = '';
   dmThreadEl.innerHTML = '';
 
-  // load last 200 messages
+  // Listen to messages in /dms/{id}/messages ordered asc
   const msgsQuery = query(collection(db,'dms', id, 'messages'), orderBy('ts','asc'), limit(500));
   onSnapshot(msgsQuery, (snap)=>{
     dmThreadEl.innerHTML = '';
     snap.forEach(d=>{
       const data = d.data();
       let txt = data.text || '';
-      // censor locally if enabled
-      if(mySettings.censor) txt = txt.replace(SLUR_RE, (s)=>'*'.repeat(Math.max(1,s.length)));
+      // apply client-only censor
+      if(mySettings.censor) txt = censorText(txt);
       const mdiv = document.createElement('div');
-      mdiv.className = (data.senderId === me.uid) ? 'item' : 'item';
+      mdiv.className = 'item';
       mdiv.style.textAlign = data.senderId === me.uid ? 'right' : 'left';
-      mdiv.textContent = `${data.senderName || (data.senderId)}: ${txt} (${fmtTime(data.ts)})`;
+      mdiv.textContent = `${data.senderName || data.senderId}: ${txt} (${fmtTime(data.ts)})`;
       dmThreadEl.appendChild(mdiv);
     });
     dmThreadEl.scrollTop = dmThreadEl.scrollHeight;
   });
+
+  // ensure conversation indexed on both users (so they show in conversation list)
+  await setDoc(doc(db,'users', me.uid, 'dms', id), { with: otherUid, at: serverTimestamp() }, { merge:true });
+  await setDoc(doc(db,'users', otherUid, 'dms', id), { with: me.uid, at: serverTimestamp() }, { merge:true });
+
   switchTab('dms');
 }
 
-/* ========== Friend system ========== */
-async function loadFriendsAndRequests(){
-  friendsList.innerHTML = ''; friendRequests.innerHTML = '';
-  if(!currentUser) { friendsList.textContent = 'Sign in to see friends'; return; }
-  // friends as subcollection under /users/{uid}/friends
-  const friendsSnap = await getDocs(collection(db,'users', currentUser.uid, 'friends'));
-  friendsSnap.forEach(d=>{
-    const item = document.createElement('div'); item.className='item';
-    item.textContent = d.id;
-    const actions = document.createElement('div'); actions.className='friend-actions';
-    const dmBtn = document.createElement('button'); dmBtn.textContent='DM'; dmBtn.onclick = ()=> openDMWith(d.id, d.id);
-    const unfriend = document.createElement('button'); unfriend.textContent='Unfriend'; unfriend.onclick = async ()=> { await deleteDoc(doc(db,'users',currentUser.uid,'friends',d.id)); await deleteDoc(doc(db,'users',d.id,'friends',currentUser.uid)); loadFriendsAndRequests(); };
-    actions.append(dmBtn, unfriend);
-    item.appendChild(actions); friendsList.appendChild(item);
-  });
+dmForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentUser || !currentDMConv){ alert('No conversation'); return; }
+  const text = dmInput.value.trim();
+  if(!text) return;
+  if(blocked.has(currentDMConv.otherUid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
+  const otherSnap = await getDoc(doc(db,'users', currentDMConv.otherUid));
+  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
+  if(!allow){ alert('User has DMs turned off'); return; }
 
-  // friend requests (incoming)
-  const reqSnap = await getDocs(collection(db,'users', currentUser.uid, 'friendRequests'));
-  reqSnap.forEach(d=>{
-    const data = d.data();
-    const item = document.createElement('div'); item.className='item';
-    item.textContent = `${data.name || d.id} (${d.id})`;
-    const actions = document.createElement('div');
-    const accept = document.createElement('button'); accept.textContent='Accept'; accept.onclick = async ()=>{
-      await setDoc(doc(db,'users',currentUser.uid,'friends', d.id), { at: serverTimestamp() });
-      await setDoc(doc(db,'users',d.id,'friends', currentUser.uid), { at: serverTimestamp() });
-      await deleteDoc(doc(db,'users',currentUser.uid,'friendRequests', d.id));
-      loadFriendsAndRequests();
-    };
-    const decline = document.createElement('button'); decline.textContent='Decline'; decline.onclick = async ()=> { await deleteDoc(doc(db,'users',currentUser.uid,'friendRequests', d.id)); loadFriendsAndRequests(); };
-    actions.append(accept, decline);
-    item.appendChild(actions); friendRequests.appendChild(item);
-  });
+  // client-side automod for DMs: if slur, block send and flag (we won't store slurs in DMs)
+  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
+    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur in DM (blocked)', null);
+    dmInput.value = '';
+    return;
+  }
+
+  const id = currentDMConv.id;
+  const msgsCol = collection(db,'dms', id, 'messages');
+  await addDoc(msgsCol, { senderId: currentUser.uid, senderName: currentUser.displayName || '', receiverId: currentDMConv.otherUid, text, ts: serverTimestamp() });
+
+  // ensure both users have the conv indexed
+  await setDoc(doc(db,'users', currentUser.uid, 'dms', id), { with: currentDMConv.otherUid, at: serverTimestamp() }, { merge:true });
+  await setDoc(doc(db,'users', currentDMConv.otherUid, 'dms', id), { with: currentUser.uid, at: serverTimestamp() }, { merge:true });
+
+  dmInput.value = '';
+});
+
+/* ========= Friend system UI ========= */
+async function loadFriendsPanel(){
+  friendsTabContent.innerHTML = '';
+  if(!currentUser){ friendsTabContent.textContent = 'Sign in to manage friends'; return; }
+  // default show Friends subtab
+  showFriendsSubtab('friends');
 }
 
-/* ========== DM convs list ========== */
-async function loadDMConversations(){
-  dmListEl.innerHTML = '';
-  if(!currentUser){ dmListEl.textContent = 'Sign in to use DMs'; return; }
-  // Query dms where currentUser is in convId: naive approach — list dms by scanning small index
-  // We'll store a small index on each user: /users/{uid}/dms/{convId:true} when a DM is created
-  const dmsIndexSnap = await getDocs(collection(db,'users', currentUser.uid, 'dms'));
-  const convs = [];
-  dmsIndexSnap.forEach(d=> convs.push(d.id));
-  if(convs.length === 0) { dmListEl.textContent = 'No conversations yet'; return; }
-  for(const id of convs){
-    const otherUid = id.split('_').find(x => x !== currentUser.uid);
-    const otherSnap = await getDoc(doc(db,'users',otherUid));
-    const display = otherSnap.exists() ? (otherSnap.data().username || otherUid) : otherUid;
-    const item = document.createElement('div'); item.className='item';
-    item.textContent = display;
-    item.onclick = ()=> openDMWith(otherUid, display);
-    dmListEl.appendChild(item);
+ftabFriends.addEventListener('click', ()=> showFriendsSubtab('friends'));
+ftabRequests.addEventListener('click', ()=> showFriendsSubtab('requests'));
+ftabSent.addEventListener('click', ()=> showFriendsSubtab('sent'));
+
+async function showFriendsSubtab(which){
+  ftabFriends.classList.toggle('active', which==='friends');
+  ftabRequests.classList.toggle('active', which==='requests');
+  ftabSent.classList.toggle('active', which==='sent');
+  friendsTabContent.innerHTML = '';
+  if(!currentUser) { friendsTabContent.textContent = 'Sign in to manage friends'; return; }
+
+  if(which === 'friends'){
+    const snap = await getDocs(collection(db,'users', currentUser.uid, 'friends'));
+    if(snap.empty){ friendsTabContent.textContent = 'No friends yet'; return; }
+    snap.forEach(d=>{
+      const el = document.createElement('div'); el.className='item';
+      el.textContent = d.id;
+      const btns = document.createElement('div'); btns.className='friend-actions';
+      const dmBtn = document.createElement('button'); dmBtn.textContent='DM'; dmBtn.onclick = ()=> openDMWith(d.id, d.id);
+      const unfriend = document.createElement('button'); unfriend.textContent='Unfriend'; unfriend.onclick = async ()=>{
+        await deleteDoc(doc(db,'users', currentUser.uid, 'friends', d.id));
+        await deleteDoc(doc(db,'users', d.id, 'friends', currentUser.uid));
+        showFriendsSubtab('friends');
+      };
+      btns.append(dmBtn, unfriend);
+      el.appendChild(btns);
+      friendsTabContent.appendChild(el);
+    });
+  } else if(which === 'requests'){
+    // incoming requests under /users/{me}/friendRequests
+    const snap = await getDocs(collection(db,'users', currentUser.uid, 'friendRequests'));
+    if(snap.empty){ friendsTabContent.textContent = 'No incoming requests'; return; }
+    snap.forEach(d=>{
+      const data = d.data();
+      const el = document.createElement('div'); el.className='item';
+      el.textContent = `${data.fromName || data.from} (${d.id})`;
+      const accept = document.createElement('button'); accept.textContent='Accept'; accept.onclick = async ()=>{
+        // create friendship under both users and delete request
+        await setDoc(doc(db,'users', currentUser.uid, 'friends', d.id), { at: serverTimestamp() }, { merge:true });
+        await setDoc(doc(db,'users', d.id, 'friends', currentUser.uid), { at: serverTimestamp() }, { merge:true });
+        await deleteDoc(doc(db,'users', currentUser.uid, 'friendRequests', d.id));
+        showFriendsSubtab('requests');
+      };
+      const decline = document.createElement('button'); decline.textContent='Decline'; decline.onclick = async ()=>{
+        await deleteDoc(doc(db,'users', currentUser.uid, 'friendRequests', d.id));
+        showFriendsSubtab('requests');
+      };
+      const block = document.createElement('button'); block.textContent='Block (local)'; block.onclick = ()=> { blocked.add(d.id); localStorage.setItem('blocked_uids', JSON.stringify(Array.from(blocked))); renderBlockedList(); };
+      const actions = document.createElement('div'); actions.className='friend-actions';
+      actions.append(accept, decline, block);
+      el.appendChild(actions);
+      friendsTabContent.appendChild(el);
+    });
+  } else if(which === 'sent'){
+    // outgoing: they are stored in targets as /users/{target}/friendRequests/{myUid}
+    // to list outgoing, we scan users for docs referencing currentUser? That's heavy.
+    // Instead we maintain index: /users/{me}/sentRequests/{targetUid}
+    const snap = await getDocs(collection(db,'users', currentUser.uid, 'sentRequests'));
+    if(snap.empty){ friendsTabContent.textContent = 'No sent requests'; return; }
+    snap.forEach(d=>{
+      const el = document.createElement('div'); el.className='item';
+      el.textContent = d.id;
+      const cancel = document.createElement('button'); cancel.textContent='Cancel'; cancel.onclick = async ()=>{
+        await deleteDoc(doc(db,'users', currentUser.uid, 'sentRequests', d.id));
+        // also delete receiver's incoming request if present
+        await deleteDoc(doc(db,'users', d.id, 'friendRequests', currentUser.uid));
+        showFriendsSubtab('sent');
+      };
+      el.appendChild(cancel);
+      friendsTabContent.appendChild(el);
+    });
   }
 }
 
-/* ========== Settings handling ========== */
+/* ========= Settings handling ========= */
 async function loadMySettings(){
   if(!currentUser) return;
   const snap = await getDoc(doc(db,'users', currentUser.uid));
@@ -585,14 +658,12 @@ async function loadMySettings(){
     mySettings = { allowDMs: true, censor:false, theme:'dark', showDmBadge:true };
     await setDoc(doc(db,'users', currentUser.uid), { allowDMs: true, censor:false, theme:'dark', showDmBadge:true }, { merge:true });
   }
-  // apply to UI
   allowDMToggle.checked = mySettings.allowDMs;
   censorToggle.checked = mySettings.censor;
   dmBadgeToggle.checked = mySettings.showDmBadge;
   setTheme(mySettings.theme);
 }
 
-/* toggle settings write */
 allowDMToggle.addEventListener('change', async ()=>{
   if(!currentUser) return;
   mySettings.allowDMs = allowDMToggle.checked;
@@ -614,7 +685,7 @@ themeToggle.addEventListener('click', async ()=>{
   if(currentUser) await setDoc(doc(db,'users', currentUser.uid), { theme: mySettings.theme }, { merge:true });
 });
 
-/* ========== Signup / Signin / Google ========== */
+/* ========= Signup / Signin / Google ========= */
 signinTab.onclick = ()=> { signinPane.style.display='block'; signupPane.style.display='none'; };
 signupTab.onclick = ()=> { signupPane.style.display='block'; signinPane.style.display='none'; };
 
@@ -628,7 +699,6 @@ document.getElementById('signupForm').addEventListener('submit', async (e)=>{
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await claimUsernameTx(username, cred.user.uid);
     await updateProfile(cred.user, { displayName: username });
-    // write default settings and deviceId
     await setDoc(doc(db,'users',cred.user.uid), { username, email, deviceId, allowDMs:true, censor:false, theme:'dark', showDmBadge:true, createdAt:serverTimestamp() }, { merge:true });
     authMsg.textContent = 'Account created and signed in';
   } catch(err){
@@ -651,7 +721,7 @@ googleBtn.onclick = async ()=> {
 };
 getRedirectResult(auth).catch(err => { if(err) authMsg.textContent = err.message || String(err); });
 
-/* ========== Username registry claim ========== */
+/* ========= Username registry claim ========= */
 async function claimUsernameTx(username, uid){
   const uname = username.toLowerCase();
   const unameRef = doc(db,'usernames', uname);
@@ -662,17 +732,13 @@ async function claimUsernameTx(username, uid){
   });
 }
 
-/* ========== Moderation helpers (simple setDoc wrapper) ========== */
+/* ========= Moderation / AutoMod helpers ========= */
 async function setMute(uid, ms, reason){
   const until = ms>0 ? new Date(Date.now()+ms) : new Date(0);
   await setDoc(doc(db,'rooms',ROOM_ID,'bans', uid), { muteUntil: until, by: currentUser.email, at: serverTimestamp(), reason }, { merge:true });
 }
-
-/* ========== AutoMod flag & escalate (client-side) ========== */
 async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
-  // create a flag for mods to review
   await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
-  // escalate strikes in /rooms/global/automod/{uid}
   const ref = doc(db,'rooms', ROOM_ID, 'automod', uid);
   const snap = await getDoc(ref);
   const now = Date.now();
@@ -686,10 +752,44 @@ async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
   await setMute(uid, muteMs, `AutoMod slur (strike ${strikes})`);
 }
 
-/* ========== parse human durations like 10m,1h,1d ========== */
-function parseHumanDuration(s){ if(!s) return 0; const m = String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v = +m[1], u = m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
+/* ========= Public chat: listener & send ========= */
+function startPublicListener(myUid){
+  const q = query(msgsRef, orderBy('ts','asc'), limit(500));
+  onSnapshot(q, (snap) => {
+    messagesEl.innerHTML = '';
+    lastUid = null; lastTsMs = 0;
+    snap.forEach(d => {
+      const m = d.data();
+      if(containsSlur(m.text || '') || containsSlur(m.name || '')){
+        if(currentUser && (modUIDs.has(currentUser.uid) || currentUser.uid === SUPERADMIN_UID)){
+          deleteDoc(doc(db,'rooms',ROOM_ID,'messages', d.id)).catch(()=>{});
+        }
+        if(currentUser) addDoc(flagsColl, { uid: m.uid, name: m.name || '', email: currentUser.email || '', text: m.text || '', reason: 'slur (autoscan)', msgId: d.id, at: serverTimestamp() }).catch(()=>{});
+        return;
+      }
+      renderPublicMessage(d, myUid);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }, (err) => { console.error('messages onSnapshot error', err); });
+}
 
-/* ========== Real-time: watch mods list (for crowns) but watch my mod doc separately to avoid reload loops ========== */
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentUser){ alert('Sign in first'); return; }
+  const text = input.value.trim();
+  if(!text || text.length > MAX_LEN) return;
+  if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
+
+  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
+    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur (blocked before send)', null);
+    input.value = ''; updateCounter(); return;
+  }
+
+  await addDoc(msgsRef, { uid: currentUser.uid, name: currentUser.displayName || 'Anon', text, ts: serverTimestamp() });
+  noteSent(); input.value=''; updateCounter(); messagesEl.scrollTop = messagesEl.scrollHeight;
+});
+
+/* ========= Mods watchers (crowns + my mod doc to avoid reload loops) ========= */
 function watchModsList(){
   onSnapshot(modsColl, (snap)=>{
     const s = new Set(); snap.forEach(d=> s.add(d.id));
@@ -704,67 +804,22 @@ function watchMyModDoc(uid){
   onSnapshot(ref, (snap)=>{
     const nowIs = snap.exists();
     if(myModCached === null){ myModCached = nowIs; return; }
-    if(nowIs !== myModCached){ myModCached = nowIs; location.reload(); } // reload exactly once when it flips
+    if(nowIs !== myModCached){ myModCached = nowIs; location.reload(); }
   });
 }
 function paintHeader(){
   if(!currentUser) return;
-  const crown = (modUIDs.has(currentUser.uid) || currentUser.email === OWNER_EMAIL) ? ' 👑' : '';
+  const crown = (modUIDs.has(currentUser.uid) || currentUser.uid === SUPERADMIN_UID) ? ' 👑' : '';
   whoami.style.display = 'inline-block';
   whoami.textContent = `@${currentUser.displayName || 'user'} · ${currentUser.email || ''}${crown}`;
 }
 
-/* ========== Realtime listeners and UI wiring ========== */
-input.addEventListener('input', ()=> { updateCounter(); input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,160)+'px'; });
-input.addEventListener('keydown', (e)=> { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }});
-dmInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); dmForm.requestSubmit(); }});
+/* ========= utility functions ========= */
+function parseHumanDuration(s){ if(!s) return 0; const m = String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v = +m[1], u = m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
+function updateDmBadge(count){ if(!mySettings.showDmBadge) { dmBadgeEl.textContent = ''; return; } if(!count) { dmBadgeEl.textContent = ''; return; } dmBadgeEl.innerHTML = `<span class="badge">${count}</span>`; }
+async function refreshDmBadge(){ if(!currentUser) { updateDmBadge(0); return; } const snaps = await getDocs(collection(db,'users', currentUser.uid, 'dms')); updateDmBadge(snaps.size); }
 
-form.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!currentUser) { alert('Sign in first'); return; }
-  const text = input.value.trim();
-  if(!text || text.length > MAX_LEN) return;
-  if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
-
-  // client-side automod: if slur, block and flag & escalate; do not send
-  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
-    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur (blocked before send)', null);
-    input.value = ''; updateCounter();
-    return;
-  }
-
-  await addDoc(msgsRef, { uid: currentUser.uid, name: currentUser.displayName || 'Anon', text, ts: serverTimestamp() });
-  noteSent(); input.value=''; updateCounter(); messagesEl.scrollTop = messagesEl.scrollHeight;
-});
-
-dmForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!currentUser || !currentDMConv) { alert('No conversation'); return; }
-  const text = dmInput.value.trim();
-  if(!text) return;
-  // blocked check
-  if(blocked.has(currentDMConv.otherUid) || blocked.has(currentUser.uid)){ alert('Cannot DM (blocked)'); return; }
-  // check target allowDMs
-  const otherSnap = await getDoc(doc(db,'users', currentDMConv.otherUid));
-  const allow = otherSnap.exists() ? (otherSnap.data().allowDMs !== false) : true;
-  if(!allow){ alert('User has DMs turned off'); return; }
-  // censor? this is client-only display; we still store original text in DB
-  if(containsSlur(text) || containsSlur(currentUser.displayName || '')){
-    // for DMs we follow your earlier instruction: when slur in DM and censor NOT enabled -> delete? you said earlier slurs auto-delete in public; for DMs we will block send and flag/escalate
-    await flagAndEscalate(currentUser.uid, currentUser.displayName || '', currentUser.email || '', text, 'slur in DM (blocked)', null);
-    dmInput.value = '';
-    return;
-  }
-  const id = currentDMConv.id;
-  const msgsCol = collection(db,'dms', id, 'messages');
-  await addDoc(msgsCol, { senderId: currentUser.uid, senderName: currentUser.displayName || '', receiverId: currentDMConv.otherUid, text, ts: serverTimestamp() });
-  // update indexes so both users can list the conv
-  await setDoc(doc(db,'users', currentUser.uid, 'dms', id), { with: currentDMConv.otherUid, at: serverTimestamp() }, { merge:true });
-  await setDoc(doc(db,'users', currentDMConv.otherUid, 'dms', id), { with: currentUser.uid, at: serverTimestamp() }, { merge:true });
-  dmInput.value = ''; 
-});
-
-/* ========== Real-time public chat with auto slur-filtering for mods ========== */
+/* ========= Auth state handling ========= */
 onAuthStateChanged(auth, async (user) => {
   currentUser = user || null;
   if(!user){
@@ -774,9 +829,7 @@ onAuthStateChanged(auth, async (user) => {
     authArea.style.display = '';
     sideCol.style.display = '';
     modPanel.style.display = 'none';
-    // show chat but maybe not allow send
     updateCounter();
-    // render public chat for signed out user (listen as anonymous)
     startPublicListener(null);
     return;
   }
@@ -784,23 +837,19 @@ onAuthStateChanged(auth, async (user) => {
   authState.textContent = 'signed in';
   authArea.style.display = 'none';
   signoutBtn.style.display = '';
-  // attach device id & ensure user doc (profile)
+  // attach device id & ensure user doc
   await setDoc(doc(db,'users', user.uid), { email: user.email || '', username: user.displayName || '', deviceId, lastSeen: serverTimestamp() }, { merge:true });
-
-  // load user-specific settings
   await loadMySettings();
-  // watch mods and my mod doc
   watchModsList();
   watchMyModDoc(user.uid);
   paintHeader();
 
-  // show/hide side column depending on mod status (note: mod list watcher updates modUIDs)
-  const isMeMod = modUIDs.has(user.uid) || user.email === OWNER_EMAIL;
-  if(isMeMod){
+  // mod UI show/hide
+  const imMod = modUIDs.has(user.uid) || user.uid === SUPERADMIN_UID;
+  if(imMod){
     sideCol.style.display = '';
     modPanel.style.display = '';
     chatCol.style.flex = '2';
-    // attach mod-only listeners
     onSnapshot(bansColl, snap => { modBans.innerHTML=''; snap.forEach(d=>{ const b = d.data(); const el = document.createElement('div'); el.className='item'; el.textContent = `${d.id} — ${b.reason || ''}`; modBans.appendChild(el); }); });
     onSnapshot(query(flagsColl, orderBy('at','desc'), limit(200)), snap => { modFlags.innerHTML=''; snap.forEach(d=>{ const f = d.data(); const el = document.createElement('div'); el.className='item'; el.textContent = `${f.name || f.uid} — ${f.reason || ''} — ${f.text?.slice(0,80)}`; modFlags.appendChild(el); }); });
   } else {
@@ -809,70 +858,16 @@ onAuthStateChanged(auth, async (user) => {
     chatCol.style.flex = '1 1 100%';
   }
 
-  // watch my ban doc for mute/ban
+  // watch my ban doc
   onSnapshot(doc(db,'rooms',ROOM_ID,'bans', user.uid), snap => { showBanState(snap.data() || null); });
 
-  // start public listener as authed user
   startPublicListener(user.uid);
+  await refreshDmBadge();
+  renderBlockedList();
 });
 
-/* start public listener (avoids mod-only reads for non-mods) */
-function startPublicListener(myUid){
-  const q = query(msgsRef, orderBy('ts','asc'), limit(500));
-  onSnapshot(q, (snap) => {
-    messagesEl.innerHTML = '';
-    lastUid = null; lastTsMs = 0;
-    snap.forEach(d => {
-      const m = d.data();
-      // if a slur is present and I'm a mod, delete and flag; if not mod, hide it
-      if(containsSlur(m.text || '') || containsSlur(m.name || '')){
-        if(currentUser && (modUIDs.has(currentUser.uid) || currentUser.email === OWNER_EMAIL)) {
-          deleteDoc(doc(db,'rooms',ROOM_ID,'messages', d.id)).catch(()=>{});
-        }
-        // create flag best-effort (any authed user can create flag)
-        if(currentUser) addDoc(flagsColl, { uid: m.uid, name: m.name || '', email: currentUser.email || '', text: m.text || '', reason: 'slur (autoscan)', msgId: d.id, at: serverTimestamp() }).catch(()=>{});
-        return;
-      }
-      renderPublicMessage(d, myUid);
-    });
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }, (err) => { console.error('messages onSnapshot error', err); });
-}
-
-/* show ban/mute UI */
-function showBanState(b){
-  sendingDisabledByBan = false; banNotice.textContent = '';
-  if(!b) return;
-  const now = Date.now();
-  const perma = !!b.perma;
-  const muteUntil = b.muteUntil?.toMillis?.() ?? 0;
-  const banUntil = b.banUntil?.toMillis?.() ?? 0;
-  const reason = b.reason || '';
-  if(perma || banUntil > now){
-    sendingDisabledByBan = true;
-    banNotice.textContent = (perma ? 'Permanently banned' : `Banned until ${new Date(banUntil).toLocaleString()}`) + (reason ? ` — ${reason}` : '');
-  } else if(muteUntil > now){
-    sendingDisabledByBan = true;
-    banNotice.textContent = `Muted until ${new Date(muteUntil).toLocaleString()}` + (reason ? ` — ${reason}` : '');
-  }
-}
-
-/* ========== Misc & helpers ========== */
-function updateDmBadge(count){
-  if(!mySettings.showDmBadge) { dmBadgeEl.textContent = ''; return; }
-  if(!count) { dmBadgeEl.textContent = ''; return; }
-  dmBadgeEl.innerHTML = `<span class="badge">${count}</span>`;
-}
-
-/* ========== Utility: show current user's dm conv count (unread tracking omitted for brevity) ========== */
-async function refreshDmBadge(){
-  if(!currentUser) { updateDmBadge(0); return; }
-  const snaps = await getDocs(collection(db,'users', currentUser.uid, 'dms'));
-  updateDmBadge(snaps.size);
-}
-
-/* ========== Username onboard submit ========== */
-unameForm.addEventListener('submit', async (e)=>{
+/* ========= Onboard username submit ========= */
+document.getElementById('unameForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const username = unameInput.value.trim().toLowerCase();
   if(!/^[a-z0-9_]{3,20}$/.test(username)){ authMsg.textContent='Use 3–20 chars: a–z,0–9,_'; return; }
@@ -885,16 +880,21 @@ unameForm.addEventListener('submit', async (e)=>{
   } catch(err){ authMsg.textContent = err.message || String(err); }
 });
 
-/* ========== Initial UI wiring ========== */
+/* ========= initial wiring ========= */
+document.querySelectorAll('#mainTabs .tab').forEach(t=>t.addEventListener('click', ()=> switchTab(t.dataset.tab)));
 document.getElementById('tab-signin').addEventListener('click', ()=> { signinPane.style.display='block'; signupPane.style.display='none'; });
 document.getElementById('tab-signup').addEventListener('click', ()=> { signupPane.style.display='block'; signinPane.style.display='none'; });
 signoutBtn.addEventListener('click', ()=> signOut(auth));
 
-setTheme('dark'); // default
+input.addEventListener('input', () => { updateCounter(); input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,160)+'px'; });
+input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }});
+dmInput && dmInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); dmForm.requestSubmit(); }});
+
+setTheme('dark');
 updateCounter();
-setInterval(updateCounter, 300);
-setInterval(refreshDmBadge, 30000);
-refreshDmBadge();
+setInterval(updateCounter,300);
+setInterval(refreshDmBadge,30000);
+renderBlockedList();
 
 </script>
 </body>
