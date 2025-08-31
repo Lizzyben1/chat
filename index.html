@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Global Chat (Mods + Settings + Galaxy Theme)</title>
+<title>Global Chat (Themes + AutoBan + Account Delete)</title>
 <style>
   :root{
     --bg:#0b0f14; --card:#121922; --muted:#8aa0b3; --border:#1e2a36; --danger:#ff6b6b; --accent:#4da3ff; --gold:#f5c542;
@@ -28,7 +28,7 @@
   .text{white-space:pre-wrap}
   .ts{color:var(--muted);font-size:12px;margin-top:4px}
   .menu-btn{position:absolute;top:6px;right:6px;background:#0f1a25;border:1px solid var(--border);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
-  .menu{position:absolute;top:28px;right:6px;background:#0e141c;border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:210px}
+  .menu{position:absolute;top:28px;right:6px;background:#0e141c;border:1px solid var(--border);border-radius:10px;padding:6px;display:none;z-index:5;min-width:220px}
   .menu button{width:100%;text-align:left;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f1a25;color:var(--text);cursor:pointer;margin:4px 0}
   .menu button.danger{border-color:#3b1f24;background:#2a1216;color:#ffb3b3}
 
@@ -69,42 +69,58 @@
 
   /* Settings modal */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
-  .modal .panel{width:min(680px,92vw);max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .modal .panel{width:min(760px,92vw);max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .panel h2{margin:0 0 8px 0;font-size:18px}
   .panel label{font-size:14px;color:var(--muted)}
   .panel textarea{min-height:120px}
+  .danger-zone{margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)}
+  .danger-zone button{background:#2a1216;border-color:#4a1f25;color:#ffb3b3}
 
-  /* Galaxy theme (body.galaxy) */
-  @keyframes galaxyShift {
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-  }
+  /* Galaxy theme (chroma glow) */
+  @keyframes galaxyShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
   body.galaxy{
-    --bg:#05060a;
-    --card:#0a0f17;
-    --border:#1b2431;
-    --bubble:#0b1120;
-    --bubble-me:#0a1630;
-    --accent:#7aa2ff;
+    --bg:#05060a; --card:#0a0f17; --border:#1b2431; --bubble:#0b1120; --bubble-me:#0a1630; --accent:#7aa2ff; --text:#eaf2ff;
     background: linear-gradient(120deg,#0b0f1a,#0a1330,#1b1f3b,#0a1330,#0b0f1a);
-    background-size: 300% 300%;
-    animation: galaxyShift 18s ease infinite;
+    background-size: 300% 300%; animation: galaxyShift 18s ease infinite;
   }
   body.galaxy .bubble{
-    position:relative;
-    border:1px solid rgba(125,170,255,.28);
+    position:relative;border:1px solid rgba(125,170,255,.28);
     box-shadow: 0 0 0 1px rgba(125,170,255,.06), 0 0 18px rgba(125,170,255,.08) inset;
   }
   body.galaxy .bubble::before{
-    content:"";
-    position:absolute; inset:-1px;
-    pointer-events:none; border-radius:14px;
+    content:""; position:absolute; inset:-1px; pointer-events:none; border-radius:14px;
     background: linear-gradient(135deg, rgba(109,180,255,.18), rgba(255,96,207,.12), rgba(109,180,255,.18));
     mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
     -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
     padding:1px; box-shadow:0 0 24px rgba(109,180,255,.14);
+  }
+
+  /* Light theme */
+  body.light{
+    --bg:#f6f7fb; --card:#ffffff; --border:#d9e0ea; --bubble:#ffffff; --bubble-me:#eef6ff;
+    --text:#0b0f14; --muted:#526375; --accent:#2f6bd9;
+  }
+  body.light .pill{background:#f0f4fb}
+
+  /* Midnight Purple */
+  body.midnight{
+    --bg:#0a0811; --card:#120f1c; --border:#2a2540; --bubble:#171329; --bubble-me:#1e1840; --text:#efe9ff; --muted:#a89ac7; --accent:#a98bff;
+  }
+
+  /* Solarized Dark */
+  body.solarized-dark{
+    --bg:#002b36; --card:#073642; --border:#0f3a46; --bubble:#083a45; --bubble-me:#0a4652; --text:#eee8d5; --muted:#93a1a1; --accent:#268bd2;
+  }
+
+  /* Solarized Light */
+  body.solarized-light{
+    --bg:#fdf6e3; --card:#fffdf5; --border:#eee8d5; --bubble:#fffdf5; --bubble-me:#f0f7ff; --text:#073642; --muted:#657b83; --accent:#2aa198;
+  }
+
+  /* Forest */
+  body.forest{
+    --bg:#0c120d; --card:#111a12; --border:#1d2a20; --bubble:#152416; --bubble-me:#15321a; --text:#e4f5e7; --muted:#93b29a; --accent:#6adf9b;
   }
 </style>
 </head>
@@ -202,13 +218,24 @@
       <div>
         <label>Theme</label>
         <select id="themeSelect" style="width:100%;margin-top:6px">
-          <option value="default">Default</option>
+          <option value="default">Default (Dark)</option>
+          <option value="light">Light</option>
           <option value="galaxy">Galaxy (chroma glow)</option>
+          <option value="midnight">Midnight Purple</option>
+          <option value="solarized-dark">Solarized Dark</option>
+          <option value="solarized-light">Solarized Light</option>
+          <option value="forest">Forest</option>
         </select>
         <label style="display:block;margin-top:12px">
           <input type="checkbox" id="censorToggle"> Enable swear censor (client-side)
         </label>
         <div class="tiny">When enabled, <em>your view</em> censors common swears in message text. It doesn’t flag/ban anyone.</div>
+
+        <div class="danger-zone">
+          <h3 style="margin:8px 0 6px 0">Danger Zone</h3>
+          <button id="deleteAccountBtn">Delete my account & all my messages</button>
+          <div class="tiny">You’ll need to type your username to confirm. This cannot be undone.</div>
+        </div>
       </div>
       <div>
         <label>Custom CSS (optional)</label>
@@ -227,11 +254,12 @@
   import {
     getAuth, onAuthStateChanged, signOut,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
-    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, linkWithPopup
+    GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, linkWithPopup,
+    deleteUser
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, collection, addDoc, runTransaction,
-    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs
+    serverTimestamp, query, orderBy, limit, onSnapshot, deleteDoc, getDocs, where
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   // ---------- Firebase config ----------
@@ -287,6 +315,7 @@
   const customCss = document.getElementById('customCss');
   const applyCss = document.getElementById('applyCss');
   const customThemeNode = document.getElementById('customTheme');
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
   tabSignin.onclick = () => { tabSignin.classList.add('active'); tabSignup.classList.remove('active'); signinPane.style.display='block'; signupPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
   tabSignup.onclick = () => { tabSignup.classList.add('active'); tabSignin.classList.remove('active'); signupPane.style.display='block'; signinPane.style.display='none'; if (authMsg) authMsg.textContent=''; };
@@ -297,7 +326,9 @@
   const LS_CENSOR= 'chat_censor_swears';
 
   function applyThemeClass(value){
-    document.body.classList.toggle('galaxy', value==='galaxy');
+    const classes=['light','galaxy','midnight','solarized-dark','solarized-light','forest'];
+    classes.forEach(c=>document.body.classList.remove(c));
+    if(value!=='default') document.body.classList.add(value);
   }
   function loadSettings(){
     const t = localStorage.getItem(LS_THEME) || 'default';
@@ -363,7 +394,6 @@
   updateCounter();
 
   // ---------- Time helpers ----------
-  const mins = m=>m*60*1000, hours=h=>h*3600*1000, days=d=>d*24*3600*1000;
   const fmtTime = ts=>{try{return new Date(ts?.toMillis?.()??ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}catch{return''}};
   const fmtDateTime = ms=> new Date(ms).toLocaleString();
   function parseHumanDuration(s){ if(!s) return 0; const m=String(s).trim().match(/^(\d+)\s*([mhd])$/i); if(!m) return NaN; const v=+m[1], u=m[2].toLowerCase(); return u==='m'?v*60*1000:u==='h'?v*3600*1000:v*24*3600*1000; }
@@ -371,42 +401,63 @@
   // ---------- Mods state ----------
   let modUIDs = new Set();
   let myIsModCached = null;
-
-  function watchModsList(){
-    onSnapshot(modsColl, (snap)=>{
-      const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s;
-      paintHeaderCrown();
-    });
-  }
-  function watchMyModDoc(uid, email){
-    onSnapshot(modDoc(uid), (snap)=>{
-      const nowIsMod = (snap.exists() || email===OWNER_EMAIL);
-      if (myIsModCached === null) { myIsModCached = nowIsMod; return; }
-      if (nowIsMod !== myIsModCached) { myIsModCached = nowIsMod; location.reload(); }
-    });
-  }
+  function watchModsList(){ onSnapshot(modsColl, (snap)=>{ const s=new Set(); snap.forEach(d=>s.add(d.id)); modUIDs=s; paintHeaderCrown(); }); }
+  function watchMyModDoc(uid, email){ onSnapshot(modDoc(uid), (snap)=>{ const nowIsMod=(snap.exists()||email===OWNER_EMAIL); if(myIsModCached===null){myIsModCached=nowIsMod;return;} if(nowIsMod!==myIsModCached){myIsModCached=nowIsMod;location.reload();} }); }
   const isMod = (uid,email)=> modUIDs.has(uid) || email===OWNER_EMAIL;
-  function paintHeaderCrown(){
-    if(!auth.currentUser) return;
-    const crown = isMod(auth.currentUser.uid, auth.currentUser.email) ? ' <span class="crown">👑</span>' : '';
-    whoami.innerHTML = `@${auth.currentUser.displayName || 'user'} · ${auth.currentUser.email || ''}${crown}`;
-  }
+  function paintHeaderCrown(){ if(!auth.currentUser) return; const crown=isMod(auth.currentUser.uid, auth.currentUser.email)?' <span class="crown">👑</span>':''; whoami.innerHTML=`@${auth.currentUser.displayName||'user'} · ${auth.currentUser.email||''}${crown}`; }
 
   // ---------- Grouping state ----------
   let lastUid = null, lastTsMs = 0;
 
-  // ---------- Swear censor (client-side only) ----------
+  // ---------- Swear censor (client-side view only) ----------
   const CENSOR_ON = ()=> localStorage.getItem(LS_CENSOR) === '1';
-  // lightweight list (no slurs here—those are handled by automod elsewhere)
   const SWEARS = [
-    'fuck','shit','bitch','asshole','dick','piss','bastard','crap','bollocks','bloody','bugger','bollock',
+    'fuck','shit','bitch','asshole','dick','piss','bastard','crap','bollocks','bloody','bugger','bullock',
     'motherfucker','bullshit','wanker','tosser','prick','cunt','twat','damn','goddamn','fucking','shithead'
   ];
-  const SWEAR_RE = new RegExp(`\\b(${SWEARS.map(s=>s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')).
-    sort((a,b)=>b.length-a.length).join('|')})\\b`,'gi');
-  function censorText(s){
-    if(!CENSOR_ON()) return s;
-    return s.replace(SWEAR_RE, (m)=> m[0] + '*'.repeat(Math.max(0,m.length-1)));
+  const SWEAR_RE = new RegExp(`\\b(${SWEARS.map(s=>s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')).sort((a,b)=>b.length-a.length).join('|')})\\b`,'gi');
+  function censorText(s){ if(!CENSOR_ON()) return s; return s.replace(SWEAR_RE, (m)=> m[0] + '*'.repeat(Math.max(0,m.length-1))); }
+
+  // ---------- Slur detection (AutoBan) ----------
+  function normalize(s){
+    return s.toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[1l!]/g,'i').replace(/[3]/g,'e').replace(/[4]/g,'a').replace(/[5$]/g,'s').replace(/[7]/g,'t')
+      .replace(/[^a-z0-9 ]+/g,' ')
+      .replace(/(\w)\1{2,}/g,'$1$1')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  const SLURS = ['nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'];
+  const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
+  const containsSlur = (s)=> SLUR_RE.test(normalize(s));
+
+  // ---------- Firestore helpers ----------
+  const msgsRefForUser = (uid)=> query(msgsRef, where('uid','==',uid), limit(200));
+
+  // ---------- Mod writes ----------
+  async function setMute(uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setBan (uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+  async function setPerma(uid,reason){ await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
+
+  // ---------- AutoBan escalation (replaces previous automod mute) ----------
+  async function autoBan(uid, reasonText){
+    const ref = doc(db, 'rooms', ROOM_ID, 'automod', uid);
+    const snap = await getDoc(ref);
+    const now = Date.now();
+    let strikes = 0, last = 0;
+    if (snap.exists()) { strikes = snap.data().strikes||0; last = snap.data().lastAt?.toMillis?.() ?? 0; }
+    if (now - last > 24*3600*1000) strikes = 0; // reset after 24h quiet
+    strikes += 1;
+
+    // Ban ladder: 1d, 7d, 30d, perma
+    const ladder = [86400e3, 7*86400e3, 30*86400e3, Infinity];
+    const idx = Math.min(strikes-1, ladder.length-1);
+    const dur = ladder[idx];
+    await setDoc(ref, { strikes, lastAt: serverTimestamp() }, { merge:true });
+
+    if (dur === Infinity) { await setPerma(uid, `AutoBan slur (strike ${strikes})`); }
+    else { await setBan(uid, dur, `AutoBan slur (strike ${strikes})`); }
   }
 
   // ---------- Render helpers ----------
@@ -460,7 +511,7 @@
     const text=document.createElement('div'); text.className='text'; text.textContent = censorText(d.text||'');
     const ts=document.createElement('div'); ts.className='ts'; ts.textContent=fmtTime(d.ts);
 
-    const isGrouped = (lastUid === d.uid) && (tsMs - lastTsMs <= GROUP_WINDOW_MS);
+    const isGrouped = (lastUid === d.uid) && (tsMs - lastTsMs <= 5*60*1000);
     row.classList.toggle('grouped', isGrouped);
     row.classList.toggle('group-start', !isGrouped);
 
@@ -528,43 +579,18 @@
   }
   const noteSent=()=>{ const n=Date.now(); sendTimes.push(n); lastSentAt=n; updateCounter(); };
 
-  // ---------- Mod writes ----------
-  async function setMute(uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{muteUntil:until,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
-  async function setBan (uid,ms,reason){ const until=ms>0?new Date(Date.now()+ms):new Date(0); await setDoc(banDoc(uid),{banUntil:until,perma:false,by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
-  async function setPerma(uid,reason){ await setDoc(banDoc(uid),{perma:true,banUntil:new Date(86400000),by:auth.currentUser.email,at:serverTimestamp(),reason:reason||''},{merge:true}); }
-
-  // ---------- AutoMod (client-side for slurs) ----------
-  function normalize(s){
-    return s.toLowerCase()
-      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
-      .replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[1l!]/g,'i').replace(/[3]/g,'e').replace(/[4]/g,'a').replace(/[5$]/g,'s').replace(/[7]/g,'t')
-      .replace(/[^a-z0-9 ]+/g,' ')
-      .replace(/(\w)\1{2,}/g,'$1$1')
-      .replace(/\s+/g,' ')
-      .trim();
-  }
-  const SLURS = ['nigger','nigga','chink','spic','faggot','retard','tranny','kike','wetback'];
-  const SLUR_RE = new RegExp(`\\b(${SLURS.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})\\b`,'i');
-  const containsSlur = (s)=> SLUR_RE.test(normalize(s));
-  async function flagAndEscalate(uid, name, email, text, reason, msgId=null){
-    await addDoc(flagsColl, { uid, name, email: email||'', text, reason, msgId: msgId||'', deviceId, at: serverTimestamp() });
-    const ref = doc(db, 'rooms', ROOM_ID, 'automod', uid);
-    const snap = await getDoc(ref);
-    const now = Date.now();
-    let strikes = 0, last = 0;
-    if (snap.exists()) { strikes = snap.data().strikes||0; last = snap.data().lastAt?.toMillis?.() ?? 0; }
-    if (now - last > 24*3600*1000) strikes = 0;
-    strikes += 1;
-    const ladder = [60e3, 5*60e3, 10*60e3, 20*60e3, 3600e3, 6*3600e3, 86400e3*7, 86400e3*21, 86400e3*42];
-    const muteMs = ladder[Math.min(strikes-1, ladder.length-1)];
-    await setDoc(ref, { strikes, lastAt: serverTimestamp() }, { merge:true });
-    await setMute(uid, muteMs, `AutoMod slur (strike ${strikes})`);
+  // ---------- Slur handling paths ----------
+  async function handleSlurFromSender(user, text, msgId=null){
+    // 1) Delete the offending message if we know it
+    if (msgId) { try{ await deleteDoc(doc(db,'rooms',ROOM_ID,'messages',msgId)); } catch{} }
+    // 2) Auto-ban escalation
+    await autoBan(user.uid, 'slur');
   }
 
   // ---------- Sign out ----------
   signoutBtn.onclick = async ()=>{ await signOut(auth); updateCounter(); };
 
-  // ---------- Mod list render ----------
+  // ---------- Mod lists (unchanged) ----------
   function renderModList(allDocs){
     const q=(modSearch.value||'').toLowerCase(); modList.innerHTML='';
     allDocs.forEach(d=>{
@@ -588,8 +614,6 @@
       item.append(meta,actions); modList.appendChild(item);
     });
   }
-
-  // ---------- Flag queue render ----------
   function renderFlagList(docs){
     flagList.innerHTML='';
     const q=(modSearch.value||'').toLowerCase();
@@ -676,24 +700,29 @@
       modSearch.oninput = null;
     }
 
-    // realtime messages (hide slurs if they slip through)
+    // realtime messages — slur autoban & censor view
     const qy=query(msgsRef, orderBy('ts','asc'), limit(500));
     rtState.textContent='listening';
-    onSnapshot(qy,(snap)=>{
+    onSnapshot(qy, async (snap)=>{
       messagesEl.innerHTML=''; lastUid=null; lastTsMs=0;
-      snap.forEach(d=>{
+      for (const d of snap.docs){
         const data=d.data();
+
+        // Auto-ban flow: if message or username has slur, delete msg (best effort) and ban sender
         if (containsSlur(data.text||'') || containsSlur(data.name||'')) {
-          if (isMod(user.uid, user.email)) deleteDoc(doc(db,'rooms',ROOM_ID,'messages',d.id)).catch(()=>{});
-          addDoc(flagsColl, { uid: data.uid, name: data.name||'', email:'', text: data.text||'', reason:'slur (autoscan)', msgId:d.id, at: serverTimestamp() }).catch(()=>{});
-          return;
+          // Mods delete immediately; others ignore rendering
+          if (isMod(user.uid, user.email)) { try{ await deleteDoc(doc(db,'rooms',ROOM_ID,'messages',d.id)); }catch{} }
+          // Best-effort autoban (does not rely on being a mod; rules must allow)
+          try { await autoBan(data.uid, 'slur'); } catch(e){ /* ignore */ }
+          continue;
         }
+
         renderMessage(d, user.uid);
-      });
+      }
       scrollToBottom();
     });
 
-    // send handler + client-side automod
+    // send handler + autoban pre-check
     form.onsubmit = async (e)=>{
       e.preventDefault();
       const text=input.value.trim();
@@ -701,8 +730,9 @@
       if(sendingDisabledByBan || isRateLimited()){ updateCounter(); return; }
 
       const myName = user.displayName || 'Anon';
+      // Pre-send check: if this contains a slur, do not send; autoban immediately
       if (containsSlur(text) || containsSlur(myName)) {
-        await flagAndEscalate(user.uid, myName, user.email, text, 'slur (blocked before send)', null);
+        await handleSlurFromSender(user, text, null);
         input.value=''; updateCounter();
         return;
       }
@@ -721,8 +751,52 @@
     catch(err){ if(authMsg) authMsg.textContent=err.message||String(err); }
   });
 
+  // ---------- Account deletion (Danger Zone) ----------
+  deleteAccountBtn.onclick = async ()=>{
+    const user = auth.currentUser;
+    if (!user) return alert('You must be signed in.');
+    const username = user.displayName || '';
+    const warn1 = confirm('This will permanently delete your account and ALL of your messages. Continue?');
+    if (!warn1) return;
+    const warn2 = confirm('Last warning: this cannot be undone. Continue?');
+    if (!warn2) return;
+    const typed = prompt(`Type your username to confirm: "${username}"`);
+    if ((typed||'').trim().toLowerCase() !== (username||'').trim().toLowerCase()) {
+      alert('Username did not match. Aborting.');
+      return;
+    }
+
+    try {
+      // 1) Delete all messages by this user in batches
+      while (true) {
+        const snap = await getDocs(msgsRefForUser(user.uid));
+        if (snap.empty) break;
+        const deletions = snap.docs.map(d => deleteDoc(d.ref).catch(()=>{}));
+        await Promise.all(deletions);
+        if (snap.size < 200) break; // done
+      }
+
+      // 2) Remove user-related docs
+      const uname = (username||'').toLowerCase();
+      if (uname) { try{ await deleteDoc(doc(db,'usernames',uname)); }catch{} }
+      try{ await deleteDoc(doc(db,'users',user.uid)); }catch{}
+      try{ await deleteDoc(doc(db,'rooms',ROOM_ID,'mods',user.uid)); }catch{}
+      try{ await deleteDoc(doc(db,'rooms',ROOM_ID,'bans',user.uid)); }catch{}
+      // (Optional) clear any automod strikes
+      try{ await deleteDoc(doc(db,'rooms',ROOM_ID,'automod',user.uid)); }catch{}
+
+      // 3) Delete auth account
+      await deleteUser(user);
+      alert('Your account and messages were deleted.');
+      // Sign-out state will be handled by onAuthStateChanged (user becomes null)
+    } catch (e) {
+      // Most common: requires-recent-login
+      alert((e && e.message) ? e.message : 'Deletion failed. You might need to sign in again, then try once more.');
+    }
+  };
+
   // keep counter fresh
-  setInterval(updateCounter,300);
+  setInterval(()=>{ const t=localStorage.getItem(LS_THEME)||'default'; applyThemeClass(t); },1200);
 </script>
 </body>
 </html>
